@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">Vacant Properties — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <div class="d-flex align-items-center justify-content-between mb-6">
+            <div>
+              <h4 class="mb-1">Vacant Properties</h4>
+              <p class="text-muted mb-0">Properties with available units — select one to create a linkage</p>
+            </div>
+          </div>
+
+          <!-- Search -->
+          <div class="card mb-4">
+            <div class="card-body py-3">
+              <div class="input-group" style="max-width:360px">
+                <span class="input-group-text"><i class="ti tabler-search"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by name, district…"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- Property cards -->
+          <div class="row g-4" id="propCards">
+            <div class="col-12 text-center py-5"><div class="spinner-border text-primary"></div></div>
+          </div>
+
+          <!-- Pagination -->
+          <div class="d-flex justify-content-between align-items-center mt-4">
+            <small class="text-muted" id="tableInfo"></small>
+            <nav><ul class="pagination pagination-sm mb-0" id="pagination"></ul></nav>
+          </div>
+
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- ═══ Create Linkage Modal ══════════════════════════════════════════════════ -->
+<div class="modal fade" id="linkageModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Create Linkage</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="linkageForm">
+        <div class="modal-body">
+          <div id="linkageFormError" class="alert alert-danger d-none"></div>
+
+          <!-- Property + Unit (read-only display) -->
+          <div class="alert alert-light border py-2 px-3 mb-4">
+            <div class="small fw-semibold" id="lkPropertyRef">–</div>
+            <div class="small text-muted" id="lkUnitRef">Select a unit below</div>
+          </div>
+
+          <!-- Unit selector -->
+          <div class="mb-3">
+            <label class="form-label">Unit <small class="text-muted">(optional — leave blank for general property lead)</small></label>
+            <select class="form-select" id="lkUnit">
+              <option value="">No specific unit</option>
+            </select>
+          </div>
+
+          <!-- Tenant lead info — NO user account needed -->
+          <div class="mb-3">
+            <label class="form-label">Tenant Lead Name *</label>
+            <input type="text" class="form-control" id="lkLeadName" required placeholder="Full name of the prospective tenant"/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Tenant Lead Phone *</label>
+            <input type="text" class="form-control" id="lkLeadPhone" required placeholder="+250 7XX XXX XXX"/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Tenant Lead Email <small class="text-muted">(optional)</small></label>
+            <input type="email" class="form-control" id="lkLeadEmail" placeholder="email@example.com"/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notes <small class="text-muted">(optional)</small></label>
+            <textarea class="form-control" id="lkNotes" rows="2" placeholder="Any relevant context about this lead…"></textarea>
+          </div>
+
+          <div class="alert alert-info py-2 px-3 small mb-0">
+            <i class="ti tabler-lock me-1"></i>
+            Tenant and landlord identities are never shared with you. This linkage records your brokerage activity only.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <span id="lkSaveTxt">Submit Linkage</span>
+            <span id="lkSaveSpinner" class="spinner-border spinner-border-sm d-none ms-1"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+let page = 0, search = '';
+let selectedPropertyId = null;
+const linkageModal = new bootstrap.Modal(document.getElementById('linkageModal'));
+
+const catLabel = { FULL_HOUSE:'Full House', APARTMENT_BUILDING:'Apartment', COMPLEX:'Complex' };
+const catColor  = { FULL_HOUSE:'primary', APARTMENT_BUILDING:'info', COMPLEX:'warning' };
+const purpIcon  = { RESIDENTIAL:'🏠', SHOP:'🛍️', OFFICE:'💼', RESTAURANT:'🍽️' };
+
+async function loadProperties() {
+  const params = { page, size: 12 };
+  if (search) params.search = search;
+  const res = await request('GET', '/agent/properties?' + new URLSearchParams(params));
+  const wrap = document.getElementById('propCards');
+  if (!res || !res.ok || !res.data.data || res.data.data.content.length === 0) {
+    wrap.innerHTML = '<div class="col-12 text-center py-5 text-muted"><i class="ti tabler-building-off icon-xl mb-3 d-block"></i>No vacant properties found.</div>';
+    document.getElementById('tableInfo').textContent = '';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+  const p = res.data.data;
+
+  wrap.innerHTML = p.content.map(prop => {
+    const cat = prop.category || '';
+    const loc = [prop.district, prop.province].filter(Boolean).join(', ') || '—';
+    const rent = prop.minRent
+      ? (prop.minRent === prop.maxRent
+          ? prop.minRent.toLocaleString() + ' RWF'
+          : prop.minRent.toLocaleString() + ' – ' + prop.maxRent.toLocaleString() + ' RWF')
+      : '—';
+
+    const unitRows = (prop.units || []).slice(0, 5).map(u =>
+      `<div class="d-flex justify-content-between align-items-center border-bottom py-1 px-2 small">
+        <span>${purpIcon[u.unitPurpose]||'🏠'} <strong>${u.unitNumber}</strong>
+          ${u.floorNumber != null ? '<span class="text-muted">F'+u.floorNumber+'</span>' : ''}
+          ${u.unitType ? '<span class="badge bg-label-secondary ms-1 py-0">'+u.unitType+'</span>' : ''}
+        </span>
+        <span class="fw-semibold text-primary">${(u.rentAmount||0).toLocaleString()} RWF</span>
+      </div>`).join('');
+    const moreUnits = (prop.units||[]).length > 5
+      ? `<div class="text-center small text-muted py-1">+${prop.units.length-5} more units</div>` : '';
+
+    return `
+    <div class="col-md-6 col-xl-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header d-flex align-items-start justify-content-between gap-2 pb-2">
+          <div>
+            <span class="badge bg-label-${catColor[cat]||'secondary'} mb-1">${catLabel[cat]||cat}</span>
+            <h6 class="mb-0">${prop.name}</h6>
+            <small class="text-muted"><i class="ti tabler-map-pin me-1"></i>${loc}</small>
+          </div>
+          <div class="text-end">
+            <div class="badge bg-label-success">${prop.availableUnits} vacant</div>
+          </div>
+        </div>
+        <div class="card-body p-0">
+          ${unitRows}${moreUnits}
+        </div>
+        <div class="card-footer d-flex align-items-center justify-content-between pt-2">
+          <small class="text-muted">From <strong>${rent}</strong></small>
+          <button class="btn btn-sm btn-primary" onclick="openLinkage(${prop.id}, '${prop.name.replace(/'/g,"\\'")}', '${loc}', ${JSON.stringify(prop.units||[]).replace(/"/g,'&quot;')})">
+            <i class="ti tabler-link me-1"></i>Create Linkage
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('tableInfo').textContent =
+    `Showing ${p.number*p.size+1}–${Math.min((p.number+1)*p.size,p.totalElements)} of ${p.totalElements} properties`;
+  document.getElementById('pagination').innerHTML = Array.from({length: p.totalPages}, (_,i) =>
+    `<li class="page-item${i===p.number?' active':''}">
+       <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i+1}</a>
+     </li>`).join('');
+}
+
+function gotoPage(n) { page = n; loadProperties(); }
+document.getElementById('searchInput').addEventListener('input', function() {
+  search = this.value.trim(); page = 0; loadProperties();
+});
+
+function openLinkage(propId, propName, loc, units) {
+  selectedPropertyId = propId;
+  document.getElementById('lkPropertyRef').textContent = propName;
+  document.getElementById('lkUnitRef').textContent     = loc;
+  document.getElementById('linkageForm').reset();
+  document.getElementById('linkageFormError').classList.add('d-none');
+
+  const unitSel = document.getElementById('lkUnit');
+  unitSel.innerHTML = '<option value="">No specific unit</option>';
+  (units || []).forEach(u => {
+    const label = u.unitNumber
+      + (u.floorNumber != null ? ' (Floor '+u.floorNumber+')' : '')
+      + ' — ' + (u.rentAmount||0).toLocaleString() + ' RWF';
+    unitSel.insertAdjacentHTML('beforeend', `<option value="${u.id}">${label}</option>`);
+  });
+  linkageModal.show();
+}
+
+document.getElementById('linkageForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const spinner = document.getElementById('lkSaveSpinner');
+  spinner.classList.remove('d-none');
+  document.getElementById('linkageFormError').classList.add('d-none');
+
+  const unitVal = document.getElementById('lkUnit').value;
+  const body = {
+    propertyId:      selectedPropertyId,
+    unitId:          unitVal ? parseInt(unitVal) : null,
+    tenantLeadName:  document.getElementById('lkLeadName').value.trim(),
+    tenantLeadPhone: document.getElementById('lkLeadPhone').value.trim(),
+    tenantLeadEmail: document.getElementById('lkLeadEmail').value.trim() || null,
+    notes:           document.getElementById('lkNotes').value.trim() || null,
+  };
+
+  const res = await request('POST', '/agent/linkages', body);
+  spinner.classList.add('d-none');
+
+  if (res && res.ok) {
+    linkageModal.hide();
+    // Show success toast
+    const t = document.createElement('div');
+    t.className = 'position-fixed bottom-0 end-0 p-3'; t.style.zIndex = 9999;
+    t.innerHTML = `<div class="toast show align-items-center text-bg-success border-0">
+      <div class="d-flex"><div class="toast-body"><i class="ti tabler-check me-2"></i>Linkage submitted successfully!</div>
+      <button class="btn-close btn-close-white ms-auto me-2" onclick="this.closest('.position-fixed').remove()"></button></div></div>`;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 4000);
+  } else {
+    const err = document.getElementById('linkageFormError');
+    err.textContent = (res && res.data && res.data.message) || 'Failed to create linkage.';
+    err.classList.remove('d-none');
+  }
+});
+
+loadProperties();
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(e => e.textContent = new Date().getFullYear());</script>
+</body>
+</html>

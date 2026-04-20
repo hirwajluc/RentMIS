@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="600" height="110" viewBox="40 238 600 110" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="navyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0D2B55"/>
+      <stop offset="100%" stop-color="#122F5E"/>
+    </linearGradient>
+    <style>
+      .wordmark-primary { font-family: Arial, Helvetica, sans-serif; font-weight: 700; fill: #0D2B55; letter-spacing: 0.04em; }
+      .wordmark-sub { font-family: Arial, Helvetica, sans-serif; font-weight: 400; fill: #4A6A8A; letter-spacing: 0.18em; }
+    </style>
+  </defs>
+  <rect x="40" y="238" width="600" height="110" rx="16" fill="#F4F8FC"/>
+  <rect x="64" y="261" width="64" height="64" rx="16" fill="url(#navyGrad)"/>
+  <polygon points="96,270 75,285 117,285" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"/>
+  <rect x="81" y="285" width="30" height="22" rx="2.5" fill="none" stroke="#FFFFFF" stroke-width="1.8"/>
+  <rect x="89" y="294" width="10" height="13" rx="2" fill="#2A9D5C"/>
+  <circle cx="75"  cy="285" r="2.5" fill="#2A9D5C"/>
+  <circle cx="96"  cy="270" r="2.5" fill="#2A9D5C"/>
+  <circle cx="117" cy="285" r="2.5" fill="#2A9D5C"/>
+  <rect x="107" y="302" width="15" height="13" rx="3.5" fill="#1E7E48"/>
+  <path d="M114.5,304.5 L111,307 L111,311 Q114.5,313 114.5,313 Q118,311 118,311 L118,307 Z" fill="#FFFFFF" opacity="0.95"/>
+  <path d="M112,309.5 L114,311.5 L117,308" fill="none" stroke="#1E7E48" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="wordmark-primary" x="148" y="297" font-size="28">INKOMANE</text>
+  <text class="wordmark-sub" x="149" y="318" font-size="10">HOUSE PROPERTY MANAGEMENT</text>
+  <rect x="148" y="325" width="390" height="1.5" rx="1" fill="#C8A84B" opacity="0.7"/>
+  <text x="149" y="340" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#4A6A8A" letter-spacing="0.06em">SMART GOVERNANCE · DIGITAL TRANSFORMATION</text>
+</svg>

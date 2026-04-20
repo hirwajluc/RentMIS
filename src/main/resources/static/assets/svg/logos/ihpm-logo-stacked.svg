@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="320" height="270" viewBox="180 602 320 270" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="navyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0D2B55"/>
+      <stop offset="100%" stop-color="#122F5E"/>
+    </linearGradient>
+  </defs>
+  <rect x="180" y="602" width="320" height="270" rx="20" fill="#F4F8FC"/>
+  <rect x="300" y="622" width="80" height="80" rx="20" fill="url(#navyGrad)"/>
+  <polygon points="340,634 318,650 362,650" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+  <rect x="324" y="650" width="32" height="24" rx="3" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+  <rect x="332" y="658" width="12" height="16" rx="2.5" fill="#2A9D5C"/>
+  <circle cx="318" cy="650" r="3" fill="#2A9D5C"/>
+  <circle cx="340" cy="634" r="3" fill="#2A9D5C"/>
+  <circle cx="362" cy="650" r="3" fill="#2A9D5C"/>
+  <circle cx="340" cy="650" r="2" fill="#A0C4E0" opacity="0.8"/>
+  <rect x="358" y="681" width="18" height="15" rx="4" fill="#1E7E48"/>
+  <path d="M367,683.5 L363.5,686 L363.5,691 Q367,693.5 367,693.5 Q370.5,691 370.5,691 L370.5,686 Z" fill="#FFFFFF" opacity="0.95"/>
+  <path d="M364.5,689 L366.5,691 L370,687" fill="none" stroke="#1E7E48" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <text font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="26" fill="#0D2B55" letter-spacing="0.05em" x="340" y="734" text-anchor="middle">INKOMANE</text>
+  <line x1="220" y1="746" x2="460" y2="746" stroke="#C8A84B" stroke-width="1" opacity="0.6"/>
+  <text font-family="Arial, Helvetica, sans-serif" font-weight="400" font-size="9" fill="#4A6A8A" letter-spacing="0.2em" x="340" y="762" text-anchor="middle">HOUSE PROPERTY MANAGEMENT</text>
+  <text font-family="Arial, Helvetica, sans-serif" font-weight="400" font-size="9" fill="#7A9ABB" letter-spacing="0.08em" x="340" y="796" text-anchor="middle">SMART GOVERNANCE · DIGITAL TRANSFORMATION</text>
+</svg>

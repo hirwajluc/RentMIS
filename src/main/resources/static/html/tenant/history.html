@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">Payment History — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+          <div class="d-flex align-items-center justify-content-between mb-6">
+            <div><h4 class="mb-1">Payment History</h4><p class="text-muted mb-0">All your rent payment records</p></div>
+            <select class="form-select form-select-sm" id="statusFilter" style="width:160px">
+              <option value="">All Statuses</option>
+              <option>PENDING</option><option>PROCESSING</option>
+              <option>COMPLETED</option><option>FAILED</option>
+            </select>
+          </div>
+
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead><tr><th>Reference</th><th>Period</th><th>Amount (RWF)</th><th>Method</th><th>Status</th><th>Date</th><th>Invoice</th></tr></thead>
+                <tbody id="historyBody">
+                  <tr><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+              <small class="text-muted" id="tableInfo"></small>
+              <nav><ul class="pagination pagination-sm mb-0" id="pagination"></ul></nav>
+            </div>
+          </div>
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- EBM Viewer Modal -->
+<div class="modal fade" id="ebmViewerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px;width:96vw">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-primary text-white py-2">
+        <h6 class="modal-title mb-0"><i class="ti tabler-receipt me-2"></i>EBM Receipt <span id="ebmModalRef" class="fw-bold"></span></h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <!-- iframe wrapper: outer overflow:hidden hard-crops top (165px header) and bottom (110px footer button) -->
+      <div class="modal-body p-0" style="height:70vh;overflow:hidden;position:relative;background:#fff">
+        <!-- Loading overlay -->
+        <div id="ebmLoading" style="position:absolute;inset:0;background:#fff;z-index:10;display:flex;align-items:center;justify-content:center">
+          <div class="text-center text-muted">
+            <div class="spinner-border mb-3 text-primary"></div>
+            <div>Loading EBM receipt…</div>
+            <small class="text-muted d-block mt-1">This may take a few seconds</small>
+          </div>
+        </div>
+        <!-- Scroll div: top:-200px hides Inkomane page header; bottom:-350px crops footer buttons -->
+        <div id="ebmScrollBody" style="position:absolute;top:-200px;bottom:-350px;left:0;right:0;overflow-y:auto;overflow-x:hidden">
+          <iframe id="ebmIframe" src="about:blank" scrolling="no" style="width:440px;height:1600px;border:none;display:block"></iframe>
+        </div>
+      </div>
+      <div class="modal-footer py-2 gap-2 justify-content-between">
+        <button class="btn btn-sm btn-success" onclick="downloadEBMPdf()">
+          <i class="ti tabler-file-download me-1"></i>Download PDF
+        </button>
+        <div class="d-flex gap-2">
+          <a id="ebmOpenLink" href="#" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="ti tabler-external-link me-1"></i>Open in Tab
+          </a>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice fallback Modal (no EBM yet) -->
+<div class="modal fade" id="invoiceModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Invoice Detail</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="invoiceBody"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+let page = 0;
+let _ebmCurrentVC = null;
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const statusColor = { COMPLETED:'success', PENDING:'warning', PROCESSING:'info', FAILED:'danger', CANCELLED:'secondary' };
+
+async function load() {
+  const user = Auth.getUser();
+  const params = { tenantId: user.id, page, size: 20 };
+  const sf = document.getElementById('statusFilter').value;
+  if (sf) params.status = sf;
+
+  const res = await API.getPayments(params);
+  const body = document.getElementById('historyBody');
+  if (!res || !res.ok || !res.data.data || !res.data.data.content.length) {
+    body.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No payments found</td></tr>';
+    return;
+  }
+  const p = res.data.data;
+  body.innerHTML = p.content.map(pay => `
+    <tr>
+      <td><code class="small">${pay.referenceNumber}</code></td>
+      <td>${pay.paymentPeriodMonth ? months[pay.paymentPeriodMonth-1]+' '+pay.paymentPeriodYear : '–'}</td>
+      <td><strong>${(pay.totalAmount||0).toLocaleString()}</strong></td>
+      <td><span class="badge bg-label-secondary">${pay.paymentMethod === 'BANK_TRANSFER' ? 'Bank Deposit' : (pay.paymentMethod || 'N/A')}</span></td>
+      <td><span class="badge bg-label-${statusColor[pay.status]||'secondary'}">${pay.status}</span></td>
+      <td>${pay.paidAt ? new Date(pay.paidAt).toLocaleDateString() : new Date(pay.createdAt).toLocaleDateString()}</td>
+      <td>
+        ${pay.invoice
+          ? (pay.invoice.ebmVerificationCode || pay.invoice.qrCode)
+            ? `<button class="btn btn-sm btn-outline-success" onclick="viewInvoice(${JSON.stringify(pay.invoice).replace(/"/g,'&quot;')})" title="View EBM Receipt">
+                 <i class="ti tabler-receipt me-1"></i>View EBM
+               </button>`
+            : `<span class="badge bg-label-warning">
+                 <i class="ti tabler-clock me-1"></i>EBM Pending
+               </span>`
+          : (pay.status === 'PENDING' || pay.status === 'PROCESSING') && pay.glspayCheckoutUrl
+          ? `<a href="${pay.glspayCheckoutUrl}" target="_blank" class="btn btn-sm btn-outline-primary">Pay</a>`
+          : '–'}
+      </td>
+    </tr>`).join('');
+  document.getElementById('tableInfo').textContent = `${p.totalElements} payments`;
+  document.getElementById('pagination').innerHTML = Array.from({length: p.totalPages}, (_, i) =>
+    `<li class="page-item${i===p.number?' active':''}"><a class="page-link" style="cursor:pointer" onclick="gotoPage(${i})">${i+1}</a></li>`
+  ).join('');
+}
+
+function viewInvoice(inv) {
+  // Resolve verification code from any available field
+  const vc = inv.ebmVerificationCode
+           || inv.qrCode
+           || (inv.verificationUrl && inv.verificationUrl.includes('/ebm/')
+               ? inv.verificationUrl.split('/ebm/').pop() : null);
+  if (vc) {
+    openEBMViewer(vc, inv.ebmInvoiceNumber);
+    return;
+  }
+  // EBM not yet generated — show pending info only
+  document.getElementById('invoiceBody').innerHTML = `
+    <div class="text-center py-3">
+      <i class="ti tabler-receipt-off fs-1 text-muted"></i>
+      <p class="mt-2 mb-0 text-muted">EBM receipt not yet generated.</p>
+      <small class="text-muted">Invoice: <strong>${inv.invoiceNumber || '–'}</strong></small>
+    </div>`;
+  new bootstrap.Modal(document.getElementById('invoiceModal')).show();
+}
+
+function openEBMViewer(vc, ref) {
+  _ebmCurrentVC = vc;
+  document.getElementById('ebmModalRef').textContent = ref ? '#' + ref : '';
+  document.getElementById('ebmOpenLink').href = vc ? `https://qa.inkomane.rw/ebm/${vc}` : '#';
+
+  const iframe  = document.getElementById('ebmIframe');
+  const loading = document.getElementById('ebmLoading');
+  loading.style.display = 'flex';
+  loading.innerHTML = `<div class="text-center text-muted">
+    <div class="spinner-border mb-3 text-primary"></div>
+    <div>Loading EBM receipt…</div>
+    <small class="text-muted d-block mt-1">This may take a few seconds</small>
+  </div>`;
+  iframe.src = 'about:blank';
+
+  new bootstrap.Modal(document.getElementById('ebmViewerModal')).show();
+
+  if (!vc) {
+    loading.innerHTML = '<div class="text-danger py-4 text-center">No EBM code available for this payment.</div>';
+    return;
+  }
+  // onload fires when initial HTML is parsed; give React 3s to hydrate + render receipt
+  iframe.onload = function() {
+    if (iframe.src === 'about:blank') return;
+    setTimeout(() => { loading.style.display = 'none'; }, 3000);
+  };
+  iframe.src = `https://qa.inkomane.rw/ebm/${vc}`;
+}
+window.openEBMViewer = openEBMViewer;
+
+
+function downloadEBMPdf() {
+  if (_ebmCurrentVC) window.open(`https://qa.inkomane.rw/ebm/${_ebmCurrentVC}`, '_blank');
+}
+
+function gotoPage(n) { page = n; load(); }
+document.getElementById('statusFilter').addEventListener('change', () => { page = 0; load(); });
+load();
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>

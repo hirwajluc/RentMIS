@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">Payments — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <div class="d-flex align-items-center justify-content-between mb-6">
+            <div><h4 class="mb-1">Payments</h4><p class="text-muted mb-0">Rent payment records</p></div>
+            <select class="form-select form-select-sm" id="statusFilter" style="width:160px">
+              <option value="">All Statuses</option>
+              <option>PENDING</option><option>PROCESSING</option>
+              <option>COMPLETED</option><option>FAILED</option><option>CANCELLED</option>
+            </select>
+          </div>
+
+          <!-- Stats mini-cards -->
+          <div class="row g-4 mb-6">
+            <div class="col-sm-4">
+              <div class="card border-start border-4 border-success">
+                <div class="card-body py-3 d-flex align-items-center gap-3">
+                  <i class="ti tabler-circle-check fs-3 text-success"></i>
+                  <div><small class="text-muted d-block">Completed</small><strong id="countCompleted">–</strong></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="card border-start border-4 border-warning">
+                <div class="card-body py-3 d-flex align-items-center gap-3">
+                  <i class="ti tabler-clock fs-3 text-warning"></i>
+                  <div><small class="text-muted d-block">Pending</small><strong id="countPending">–</strong></div>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-4">
+              <div class="card border-start border-4 border-danger">
+                <div class="card-body py-3 d-flex align-items-center gap-3">
+                  <i class="ti tabler-x fs-3 text-danger"></i>
+                  <div><small class="text-muted d-block">Failed</small><strong id="countFailed">–</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="input-group w-auto" style="max-width:260px">
+                <span class="input-group-text"><i class="ti tabler-search"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Reference…"/>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead>
+                  <tr>
+                    <th>Reference</th><th>Tenant</th><th>Unit</th><th>Amount (RWF)</th>
+                    <th>Period</th><th>Method</th><th>Status</th><th>Date</th><th>EBM Receipt</th>
+                  </tr>
+                </thead>
+                <tbody id="paymentsBody">
+                  <tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+              <small class="text-muted" id="tableInfo"></small>
+              <nav><ul class="pagination pagination-sm mb-0" id="pagination"></ul></nav>
+            </div>
+          </div>
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- EBM Viewer Modal -->
+<div class="modal fade" id="ebmViewerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px;width:96vw">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-primary text-white py-2">
+        <h6 class="modal-title mb-0"><i class="ti tabler-receipt me-2"></i>EBM Receipt <span id="ebmModalRef" class="fw-bold"></span></h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <!-- iframe wrapper: outer overflow:hidden hard-crops top header and bottom footer of Inkomane page -->
+      <div class="modal-body p-0" style="height:70vh;overflow:hidden;position:relative;background:#fff">
+        <div id="ebmLoading" style="position:absolute;inset:0;background:#fff;z-index:10;display:flex;align-items:center;justify-content:center">
+          <div class="text-center text-muted">
+            <div class="spinner-border mb-3 text-primary"></div>
+            <div>Loading EBM receipt…</div>
+            <small class="text-muted d-block mt-1">This may take a few seconds</small>
+          </div>
+        </div>
+        <!-- top:-200px hides Inkomane page header; bottom:-350px crops footer buttons -->
+        <div id="ebmScrollBody" style="position:absolute;top:-200px;bottom:-350px;left:0;right:0;overflow-y:auto;overflow-x:hidden">
+          <iframe id="ebmIframe" src="about:blank" scrolling="no" style="width:440px;height:1600px;border:none;display:block"></iframe>
+        </div>
+      </div>
+      <div class="modal-footer py-2 gap-2 justify-content-between">
+        <button class="btn btn-sm btn-success" onclick="downloadEBMPdf()">
+          <i class="ti tabler-file-download me-1"></i>Download PDF
+        </button>
+        <div class="d-flex gap-2">
+          <a id="ebmOpenLink" href="#" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="ti tabler-external-link me-1"></i>Open in Tab
+          </a>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+let page = 0, searchTimer;
+let _ebmCurrentVC = null;
+const qs = new URLSearchParams(window.location.search);
+const fixedTenant = qs.get('tenantId');
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const statusColor = { COMPLETED:'success', PENDING:'warning', PROCESSING:'info', FAILED:'danger', CANCELLED:'secondary' };
+
+async function loadPayments() {
+  const params = { page, size: 20 };
+  const sf = document.getElementById('statusFilter').value;
+  if (sf) params.status = sf;
+  if (fixedTenant) params.tenantId = fixedTenant;
+
+  const res = await API.getPayments(params);
+  if (!res || !res.ok) return;
+  const body = document.getElementById('paymentsBody');
+  const p = res.data.data;
+
+  if (!p || !p.content || p.content.length === 0) {
+    body.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No payments found</td></tr>';
+    return;
+  }
+
+  let completed = 0, pending = 0, failed = 0;
+  p.content.forEach(pay => {
+    if (pay.status === 'COMPLETED') completed++;
+    else if (pay.status === 'PENDING' || pay.status === 'PROCESSING') pending++;
+    else if (pay.status === 'FAILED' || pay.status === 'CANCELLED') failed++;
+  });
+  document.getElementById('countCompleted').textContent = completed;
+  document.getElementById('countPending').textContent   = pending;
+  document.getElementById('countFailed').textContent    = failed;
+
+  body.innerHTML = p.content.map(pay => {
+    const inv = pay.invoice;
+    const vc  = inv && (
+      inv.ebmVerificationCode
+      || inv.qrCode
+      || (inv.verificationUrl && inv.verificationUrl.includes('/ebm/')
+          ? inv.verificationUrl.split('/ebm/').pop() : null)
+    );
+
+    let invoiceCell;
+    if (vc) {
+      invoiceCell = `<button class="btn btn-primary d-inline-flex align-items-center gap-1" onclick="openEBMViewer('${vc}','${inv.ebmInvoiceNumber||''}')" title="View EBM Receipt">
+        <i class="ti tabler-receipt fs-4"></i><span>View EBM</span>
+      </button>`;
+    } else if (inv) {
+      invoiceCell = `<button class="btn btn-sm btn-outline-warning" onclick="generateEbm(${inv.id}, this)" title="Generate EBM">
+        <i class="ti tabler-refresh me-1"></i>Generate EBM
+      </button>`;
+    } else if (pay.status === 'COMPLETED') {
+      invoiceCell = '<small class="text-muted">Generating…</small>';
+    } else if ((pay.status === 'PENDING' || pay.status === 'PROCESSING') && pay.glspayCheckoutUrl) {
+      invoiceCell = `<a href="${pay.glspayCheckoutUrl}" target="_blank" class="btn btn-sm btn-outline-primary">Pay Now</a>`;
+    } else {
+      invoiceCell = '–';
+    }
+
+    return `
+    <tr>
+      <td><code class="small">${pay.referenceNumber}</code></td>
+      <td>${pay.tenant ? pay.tenant.firstName + ' ' + pay.tenant.lastName : '–'}</td>
+      <td>${pay.unit ? pay.unit.unitNumber : '–'}</td>
+      <td><strong>${(pay.totalAmount||0).toLocaleString()}</strong></td>
+      <td>${pay.paymentPeriodMonth ? months[pay.paymentPeriodMonth-1]+' '+pay.paymentPeriodYear : '–'}</td>
+      <td><span class="badge bg-label-secondary">${pay.paymentMethod === 'BANK_TRANSFER' ? 'Bank Deposit' : (pay.paymentMethod || 'N/A')}</span></td>
+      <td><span class="badge bg-label-${statusColor[pay.status]||'secondary'}">${pay.status}</span></td>
+      <td>${pay.paidAt ? new Date(pay.paidAt).toLocaleDateString() : new Date(pay.createdAt).toLocaleDateString()}</td>
+      <td>${invoiceCell}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tableInfo').textContent = `${p.totalElements} payments`;
+  document.getElementById('pagination').innerHTML = Array.from({length: p.totalPages}, (_, i) =>
+    `<li class="page-item${i===p.number?' active':''}"><a class="page-link" style="cursor:pointer" onclick="gotoPage(${i})">${i+1}</a></li>`
+  ).join('');
+}
+
+// ── EBM Viewer ───────────────────────────────────────────────────────────
+function openEBMViewer(vc, ref) {
+  _ebmCurrentVC = vc;
+  document.getElementById('ebmModalRef').textContent = ref ? '#' + ref : '';
+  document.getElementById('ebmOpenLink').href = vc ? `https://qa.inkomane.rw/ebm/${vc}` : '#';
+
+  const iframe  = document.getElementById('ebmIframe');
+  const loading = document.getElementById('ebmLoading');
+  loading.style.display = 'flex';
+  loading.innerHTML = `<div class="text-center text-muted">
+    <div class="spinner-border mb-3 text-primary"></div>
+    <div>Loading EBM receipt…</div>
+    <small class="text-muted d-block mt-1">This may take a few seconds</small>
+  </div>`;
+  iframe.src = 'about:blank';
+
+  new bootstrap.Modal(document.getElementById('ebmViewerModal')).show();
+
+  if (!vc) {
+    loading.innerHTML = '<div class="text-danger py-4 text-center">No EBM code available for this payment.</div>';
+    return;
+  }
+  // onload fires when initial HTML is parsed; give React 3s to hydrate + render receipt
+  iframe.onload = function() {
+    if (iframe.src === 'about:blank') return;
+    setTimeout(() => { loading.style.display = 'none'; }, 3000);
+  };
+  iframe.src = `https://qa.inkomane.rw/ebm/${vc}`;
+}
+window.openEBMViewer = openEBMViewer;
+
+function downloadEBMPdf() {
+  if (_ebmCurrentVC) window.open(`https://qa.inkomane.rw/ebm/${_ebmCurrentVC}`, '_blank');
+}
+
+// ── Generate EBM ─────────────────────────────────────────────────────────
+async function generateEbm(invoiceId, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating…';
+
+  const res = await API.generateEbm(invoiceId);
+
+  if (res && res.ok && res.data && res.data.data) {
+    const inv = res.data.data;
+    const vc = inv.ebmVerificationCode || inv.qrCode
+            || (inv.verificationUrl && inv.verificationUrl.includes('/ebm/')
+                ? inv.verificationUrl.split('/ebm/').pop() : null);
+    if (vc) {
+      openEBMViewer(vc, inv.ebmInvoiceNumber);
+      loadPayments();
+      return;
+    }
+  }
+
+  // Failed — restore button and show error
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti tabler-refresh me-1"></i>Generate EBM';
+  const msg = (res && res.data && res.data.message) || 'EBM generation failed. The EBM server may be temporarily unavailable. Please try again.';
+  showToast(msg, 'danger');
+}
+
+function showToast(message, type) {
+  let container = document.getElementById('toastContainer');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toastContainer';
+    container.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;min-width:300px;max-width:420px';
+    document.body.appendChild(container);
+  }
+  const id = 'toast_' + Date.now();
+  container.insertAdjacentHTML('beforeend', `
+    <div id="${id}" class="toast align-items-center text-bg-${type} border-0 show mb-2" role="alert">
+      <div class="d-flex">
+        <div class="toast-body small">${message}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="document.getElementById('${id}').remove()"></button>
+      </div>
+    </div>`);
+  setTimeout(() => { const t = document.getElementById(id); if (t) t.remove(); }, 7000);
+}
+
+function gotoPage(n) { page = n; loadPayments(); }
+document.getElementById('statusFilter').addEventListener('change', () => { page = 0; loadPayments(); });
+document.getElementById('searchInput').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { page = 0; loadPayments(); }, 300);
+});
+
+loadPayments();
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>

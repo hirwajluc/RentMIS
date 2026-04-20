@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0D2B55"/>
+      <stop offset="100%" stop-color="#122F5E"/>
+    </linearGradient>
+  </defs>
+  <!-- Background tile -->
+  <rect x="1" y="1" width="58" height="58" rx="13" fill="url(#bg)"/>
+  <!-- Roof -->
+  <polygon points="30,9 11,25 49,25" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round"/>
+  <!-- Building body -->
+  <rect x="15" y="25" width="30" height="22" rx="2" fill="none" stroke="#ffffff" stroke-width="2.2"/>
+  <!-- Door -->
+  <rect x="22" y="33" width="11" height="14" rx="2" fill="#2A9D5C"/>
+</svg>

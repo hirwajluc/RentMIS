@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Units — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <div class="d-flex align-items-center justify-content-between mb-6">
+            <div>
+              <h4 class="mb-1">Units</h4>
+              <p class="text-muted mb-0" id="subTitle">Manage property units</p>
+            </div>
+            <button class="btn btn-primary" onclick="openCreate()">
+              <i class="ti tabler-plus me-2"></i>Add Unit
+            </button>
+          </div>
+
+          <!-- Filter row -->
+          <div class="card mb-4">
+            <div class="card-body py-3">
+              <div class="row g-3 align-items-end">
+                <div class="col-md-4">
+                  <label class="form-label mb-1 small">Filter by Property</label>
+                  <select class="form-select" id="propertyFilter" onchange="onPropertyFilterChange()">
+                    <option value="">All Properties</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label mb-1 small">Wing / Block</label>
+                  <select class="form-select" id="wingFilter">
+                    <option value="">All Wings</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label mb-1 small">Status</label>
+                  <select class="form-select" id="statusFilter" onchange="page=0;loadUnits()">
+                    <option value="">All</option>
+                    <option>AVAILABLE</option><option>OCCUPIED</option>
+                    <option>MAINTENANCE</option><option>RESERVED</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-datatable table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>#</th><th>Unit</th><th>Property / Wing</th><th>Purpose</th><th>Type</th>
+                    <th>Floor</th><th>Rent (RWF)</th><th>Status</th><th>Tenant</th><th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="unitsBody">
+                  <tr><td colspan="10" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+              <small class="text-muted" id="tableInfo"></small>
+              <nav><ul class="pagination pagination-sm mb-0" id="pagination"></ul></nav>
+            </div>
+          </div>
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- ═══ Unit Modal ════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="unitModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="unitModalTitle">Add Unit</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="unitForm">
+        <div class="modal-body">
+          <div id="unitFormError" class="alert alert-danger d-none"></div>
+          <div class="row g-4">
+
+            <!-- Row 1: Property + Wing -->
+            <div class="col-md-6">
+              <label class="form-label">Property *</label>
+              <select class="form-select" id="uProperty" required onchange="onPropertySelectChange()">
+                <option value="">Select property</option>
+              </select>
+            </div>
+            <div class="col-md-6" id="uWingRow">
+              <label class="form-label">Wing / Block <small class="text-muted">(optional)</small></label>
+              <select class="form-select" id="uWing">
+                <option value="">None</option>
+              </select>
+            </div>
+
+            <!-- Row 2: Unit number + Purpose -->
+            <div class="col-md-6">
+              <label class="form-label">Unit Name / Number *</label>
+              <input type="text" class="form-control" id="uNumber" placeholder="e.g. A-101, Shop 3" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Purpose</label>
+              <select class="form-select" id="uPurpose" onchange="onPurposeChange()">
+                <option value="">Select purpose</option>
+                <option value="RESIDENTIAL">Residential</option>
+                <option value="SHOP">Shop</option>
+                <option value="OFFICE">Office</option>
+                <option value="RESTAURANT">Restaurant</option>
+              </select>
+              <div id="purposeLockedNote" class="form-text text-info d-none">
+                <i class="ti tabler-lock me-1"></i>Apartment buildings only have residential units.
+              </div>
+            </div>
+
+            <!-- Row 3: Layout type + Floor -->
+            <div class="col-md-4" id="uTypeRow">
+              <label class="form-label">Layout Type</label>
+              <select class="form-select" id="uType">
+                <option value="">Select</option>
+                <option>STUDIO</option><option>1BR</option><option>2BR</option>
+                <option>3BR</option><option>4BR</option><option>PENTHOUSE</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Floor</label>
+              <input type="number" class="form-control" id="uFloor" min="0" placeholder="0 = Ground"
+                     oninput="_doAreaCheck()"
+                     onchange="_doAreaCheck()"/>
+            </div>
+            <div class="col-md-4" id="uAreaRow">
+              <label class="form-label" id="uAreaLabel">Area (m²)</label>
+              <input type="number" class="form-control" id="uArea" min="0" step="0.01"
+                     oninput="onComplexPricingChange(); onAreaInput()"/>
+              <div id="areaMeterWrap" style="display:none" class="mt-2">
+                <div class="d-flex justify-content-between small mb-1">
+                  <span class="text-muted" id="areaMeterFloorLabel">Space used on this floor</span>
+                  <span id="areaMeterLabel" class="fw-semibold">–</span>
+                </div>
+                <div class="progress" style="height:6px">
+                  <div id="areaMeterBar" class="progress-bar" style="width:0%"></div>
+                </div>
+              </div>
+              <div id="areaErrorMsg" class="text-danger small mt-1" style="display:none"></div>
+            </div>
+
+            <!-- Row 4: Bedrooms + Bathrooms (residential only) -->
+            <div id="residentialFields">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Bedrooms</label>
+                  <input type="number" class="form-control" id="uBeds" min="0" max="20"/>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Bathrooms</label>
+                  <input type="number" class="form-control" id="uBaths" min="0" max="10"/>
+                </div>
+              </div>
+            </div>
+
+            <!-- Row 5: Price/m² (COMPLEX only) -->
+            <div id="complexPricingRow" style="display:none" class="col-md-6">
+              <label class="form-label">Price per m² (RWF)</label>
+              <input type="number" class="form-control" id="uPricePerSqm" min="0" step="0.01"
+                     placeholder="Leave blank to enter rent manually"
+                     oninput="onComplexPricingChange()"/>
+              <div class="form-text">If provided, rent = price/m² × area (m²).</div>
+            </div>
+
+            <!-- Row 6: Rent + Caution -->
+            <div class="col-md-6">
+              <label class="form-label" id="uRentLabel">Rent Amount (RWF) *</label>
+              <input type="number" class="form-control" id="uRent" min="0" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Caution (RWF)</label>
+              <input type="number" class="form-control" id="uDeposit" min="0"/>
+            </div>
+
+            <!-- Row 6: Amenities -->
+            <div class="col-12">
+              <label class="form-label">Amenities / Features</label>
+              <input type="text" class="form-control" id="uAmenities" placeholder="e.g. WiFi, Parking, Generator, Water"/>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <span id="unitSaveTxt">Save Unit</span>
+            <span id="unitSaveSpinner" class="spinner-border spinner-border-sm d-none ms-1"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+let page = 0, editId = null;
+let filterProperty = '', filterStatus = '';
+const qs = new URLSearchParams(window.location.search);
+if (qs.get('propertyId')) filterProperty = qs.get('propertyId');
+
+const unitModal = new bootstrap.Modal(document.getElementById('unitModal'));
+
+// ── Purpose → show/hide layout type & bedroom fields ─────────────────────────
+function onPurposeChange() {
+  const p = document.getElementById('uPurpose').value;
+  const isRes = (!p || p === 'RESIDENTIAL');
+  document.getElementById('uTypeRow').style.display = isRes ? '' : 'none';
+  document.getElementById('residentialFields').style.display = isRes ? '' : 'none';
+  if (!isRes) {
+    document.getElementById('uBeds').value = '';
+    document.getElementById('uBaths').value = '';
+    document.getElementById('uType').value = '';
+  }
+}
+
+// ── Load wings for a selected property ───────────────────────────────────────
+const wingsCache = {};
+async function loadWingsForProperty(propId, selectEl) {
+  selectEl.innerHTML = '<option value="">None</option>';
+  if (!propId) return;
+  if (!wingsCache[propId]) {
+    const res = await request('GET', `/api/properties/${propId}/wings`);
+    wingsCache[propId] = (res && res.ok && res.data.data) ? res.data.data : [];
+  }
+  wingsCache[propId].forEach(w => {
+    selectEl.insertAdjacentHTML('beforeend', `<option value="${w.id}">${w.name}</option>`);
+  });
+  document.getElementById('uWingRow').style.display = wingsCache[propId].length > 0 ? '' : 'none';
+}
+
+async function onPropertySelectChange() {
+  const propId = document.getElementById('uProperty').value;
+  await loadWingsForProperty(propId, document.getElementById('uWing'));
+  applyPurposeConstraint(propId);
+}
+
+// Lock purpose to RESIDENTIAL (and hide other options) for APARTMENT_BUILDING
+// Show price-per-sqm fields for COMPLEX
+function applyPurposeConstraint(propId) {
+  const prop = allPropertiesCache.find(p => String(p.id) === String(propId));
+  const purposeSel = document.getElementById('uPurpose');
+  const note = document.getElementById('purposeLockedNote');
+  const isApartment = prop && prop.category === 'APARTMENT_BUILDING';
+  const isComplex   = prop && prop.category === 'COMPLEX';
+
+  // Show / hide non-residential options
+  purposeSel.querySelectorAll('option').forEach(opt => {
+    if (opt.value && opt.value !== 'RESIDENTIAL') {
+      opt.hidden   = isApartment;
+      opt.disabled = isApartment;
+    }
+  });
+
+  if (isApartment) {
+    purposeSel.value = 'RESIDENTIAL';
+    purposeSel.disabled = true;
+    note.classList.remove('d-none');
+  } else {
+    purposeSel.disabled = false;
+    note.classList.add('d-none');
+  }
+
+  // COMPLEX: show price/m² field alongside the existing area field
+  document.getElementById('complexPricingRow').style.display = isComplex ? '' : 'none';
+  if (!isComplex) {
+    // Clear price/m² when switching away from COMPLEX
+    document.getElementById('uPricePerSqm').value = '';
+    document.getElementById('uArea').required = false;
+    document.getElementById('uAreaLabel').textContent = 'Area (m²)';
+    document.getElementById('uRent').readOnly = false;
+    document.getElementById('uRentLabel').textContent = 'Rent Amount (RWF) *';
+  }
+  onComplexPricingChange();
+  onPurposeChange();
+}
+
+// Auto-calculate rent when price/m² or area changes (COMPLEX only)
+function onComplexPricingChange() {
+  const prop = allPropertiesCache.find(p => String(p.id) === String(document.getElementById('uProperty').value));
+  if (!prop || prop.category !== 'COMPLEX') return;
+
+  const price  = parseFloat(document.getElementById('uPricePerSqm').value);
+  const area   = parseFloat(document.getElementById('uArea').value);
+  const rentEl = document.getElementById('uRent');
+  const rentLbl = document.getElementById('uRentLabel');
+  const areaEl  = document.getElementById('uArea');
+  const areaLbl = document.getElementById('uAreaLabel');
+
+  if (price > 0) {
+    areaEl.required  = true;
+    areaLbl.textContent = 'Area (m²) *';
+    rentEl.readOnly  = true;
+    rentLbl.textContent = 'Rent Amount (RWF) — auto-calculated *';
+    rentEl.value = (price > 0 && area > 0) ? parseFloat((price * area).toFixed(2)) : '';
+  } else {
+    areaEl.required  = false;
+    areaLbl.textContent = 'Area (m²)';
+    rentEl.readOnly  = false;
+    rentLbl.textContent = 'Rent Amount (RWF) *';
+  }
+}
+
+// ── Area space management (per-floor) ─────────────────────────────────────────
+let _editingUnitId = null;
+let _areaInputTimer = null;
+let _areaAbortCtrl  = null;   // cancels in-flight fetch when floor/area changes
+
+async function onAreaInput() {
+  clearTimeout(_areaInputTimer);
+  _areaInputTimer = setTimeout(_doAreaCheck, 250); // debounce rapid typing on area field
+}
+
+async function _doAreaCheck() {
+  const propId    = document.getElementById('uProperty').value;
+  const floorVal  = document.getElementById('uFloor').value;
+  const prop      = allPropertiesCache.find(p => String(p.id) === String(propId));
+  const wrap      = document.getElementById('areaMeterWrap');
+  const errEl     = document.getElementById('areaErrorMsg');
+
+  if (!prop || !prop.totalAreaSqm || floorVal === '') {
+    wrap.style.display  = 'none';
+    errEl.style.display = 'none';
+    return;
+  }
+
+  const floor     = parseInt(floorVal);
+  const total     = parseFloat(prop.totalAreaSqm) || 0;
+  const requested = parseFloat(document.getElementById('uArea').value) || 0;
+
+  // Cancel any previous in-flight request so stale responses don't overwrite current floor
+  if (_areaAbortCtrl) _areaAbortCtrl.abort();
+  _areaAbortCtrl = new AbortController();
+
+  // Show spinner label while loading
+  document.getElementById('areaMeterFloorLabel').textContent = `Floor ${floor} space used`;
+  wrap.style.display = '';
+
+  let usedOnFloor = 0;
+  try {
+    const excludeParam = _editingUnitId ? `&excludeUnitId=${_editingUnitId}` : '';
+    const res  = await fetch(
+      `/api/properties/${propId}/floor-area?floor=${floor}${excludeParam}`,
+      { headers: { Authorization: 'Bearer ' + Auth.getToken() }, signal: _areaAbortCtrl.signal }
+    );
+    const json = await res.json();
+    usedOnFloor = parseFloat(json.data?.usedAreaSqm) || 0;
+  } catch (e) {
+    if (e.name === 'AbortError') return; // superseded by newer call — stop here
+  }
+
+  const afterAdd  = usedOnFloor + requested;
+  const available = total - usedOnFloor;
+  const pct       = total > 0 ? Math.min((afterAdd / total) * 100, 100) : 0;
+
+  // Update meter
+  const bar   = document.getElementById('areaMeterBar');
+  const label = document.getElementById('areaMeterLabel');
+  document.getElementById('areaMeterFloorLabel').textContent =
+    `Floor ${floor} space used`;
+
+  wrap.style.display  = '';
+  label.textContent   = `${afterAdd.toLocaleString(undefined,{maximumFractionDigits:1})} / ${total.toLocaleString()} m²`;
+  bar.style.width     = pct.toFixed(1) + '%';
+  bar.className       = 'progress-bar' +
+    (pct >= 100 ? ' bg-danger' : pct >= 80 ? ' bg-warning' : ' bg-success');
+
+  errEl.className = 'text-danger small mt-1';
+  if (requested > 0 && requested > available) {
+    errEl.style.display = '';
+    errEl.textContent   = `Not enough space on floor ${floor}: only ${available.toLocaleString(undefined,{maximumFractionDigits:2})} m² available out of ${total.toLocaleString()} m² per floor.`;
+  } else if (pct >= 80 && pct < 100) {
+    errEl.style.display = '';
+    errEl.className     = 'text-warning small mt-1';
+    errEl.textContent   = `Warning: floor ${floor} is at ${pct.toFixed(0)}% capacity — only ${(total - afterAdd).toLocaleString(undefined,{maximumFractionDigits:2})} m² remaining.`;
+  } else {
+    errEl.style.display = 'none';
+  }
+}
+
+// Also reset meter when property changes
+const _origOnPropertySelectChange = onPropertySelectChange;
+async function onPropertySelectChange() {
+  await _origOnPropertySelectChange();
+  document.getElementById('uArea').dataset.savedArea = '0';
+  _editingUnitId = null;
+  document.getElementById('areaMeterWrap').style.display = 'none';
+  document.getElementById('areaErrorMsg').style.display  = 'none';
+}
+
+// ── Property filter change ────────────────────────────────────────────────────
+async function onPropertyFilterChange() {
+  filterProperty = document.getElementById('propertyFilter').value;
+  page = 0;
+
+  // Reload wing filter
+  const wingFilter = document.getElementById('wingFilter');
+  wingFilter.innerHTML = '<option value="">All Wings</option>';
+  if (filterProperty) {
+    await loadWingsForProperty(filterProperty, wingFilter);
+    // Re-add "All" option at top
+    const allOpt = document.createElement('option');
+    allOpt.value = ''; allOpt.textContent = 'All Wings';
+    wingFilter.insertBefore(allOpt, wingFilter.firstChild);
+    wingFilter.value = '';
+    const prop = allPropertiesCache.find(p => String(p.id) === String(filterProperty));
+    if (prop) document.getElementById('subTitle').textContent = 'Units in: ' + prop.name;
+  } else {
+    document.getElementById('subTitle').textContent = 'Manage property units';
+  }
+  loadUnits();
+}
+
+// ── Load properties for filter + modal select ─────────────────────────────────
+let allPropertiesCache = [];
+async function loadPropertyOptions() {
+  const res = await API.getProperties({ size: 200 });
+  if (!res || !res.ok || !res.data.data) return;
+  allPropertiesCache = res.data.data.content || [];
+  const opts = allPropertiesCache
+    .filter(p => p.category !== 'FULL_HOUSE')  // Full house has no units
+    .map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+  const allOpts = allPropertiesCache.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+  document.getElementById('propertyFilter').innerHTML = '<option value="">All Properties</option>' + allOpts;
+  document.getElementById('uProperty').innerHTML      = '<option value="">Select property</option>' + opts;
+
+  if (filterProperty) {
+    document.getElementById('propertyFilter').value = filterProperty;
+    onPropertyFilterChange();
+  }
+}
+
+// ── Load units table ──────────────────────────────────────────────────────────
+async function loadUnits() {
+  const params = { page, size: 20 };
+  if (filterProperty) params.propertyId = filterProperty;
+  const wingFilterVal = document.getElementById('wingFilter').value;
+  // Wing filter is client-side on current page (server doesn't support wing param)
+  const res = await API.getUnits(params);
+  if (!res || !res.ok) return;
+  const body = document.getElementById('unitsBody');
+  const p = res.data.data;
+  if (!p || !p.content || p.content.length === 0) {
+    body.innerHTML = '<tr><td colspan="10" class="text-center py-4 text-muted">No units found</td></tr>';
+    document.getElementById('tableInfo').textContent = '0 units';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  let rows = p.content;
+  if (wingFilterVal) rows = rows.filter(u => String(u.wingId) === wingFilterVal);
+  if (filterStatus)  rows = rows.filter(u => u.status === filterStatus);
+
+  const statusColor = { AVAILABLE:'success', OCCUPIED:'primary', MAINTENANCE:'warning', RESERVED:'info' };
+  const purposeColor = { RESIDENTIAL:'label-primary', SHOP:'label-warning', OFFICE:'label-info', RESTAURANT:'label-danger' };
+  const purposeIcon  = { RESIDENTIAL:'🏠', SHOP:'🛍️', OFFICE:'💼', RESTAURANT:'🍽️' };
+
+  body.innerHTML = rows.map((u, i) => `
+    <tr>
+      <td>${page * 20 + i + 1}</td>
+      <td>
+        <strong>${u.unitNumber}</strong>
+      </td>
+      <td>
+        <span class="fw-semibold small">${u.propertyName || '–'}</span>
+        ${u.wingName ? `<br><small class="text-muted"><i class="ti tabler-building-arch me-1"></i>${u.wingName}</small>` : ''}
+      </td>
+      <td>
+        ${u.unitPurpose
+          ? `<span class="badge bg-${purposeColor[u.unitPurpose]||'label-secondary'}">${purposeIcon[u.unitPurpose]||''} ${u.unitPurpose}</span>`
+          : '<span class="text-muted small">–</span>'}
+      </td>
+      <td><span class="badge bg-label-secondary">${u.unitType || '–'}</span></td>
+      <td><small>${u.floorNumber != null ? 'F'+u.floorNumber : '–'}</small></td>
+      <td>${(u.rentAmount||0).toLocaleString()}</td>
+      <td><span class="badge bg-${statusColor[u.status]||'secondary'}">${u.status}</span></td>
+      <td>${u.currentTenant
+        ? `<span class="text-nowrap">${u.currentTenant.firstName} ${u.currentTenant.lastName}</span>`
+        : '<span class="text-muted small">Vacant</span>'}</td>
+      <td>
+        <button class="btn btn-sm btn-icon btn-outline-warning" onclick="openEdit(${JSON.stringify(u).replace(/"/g,'&quot;')})" title="Edit">
+          <i class="ti tabler-edit"></i>
+        </button>
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('tableInfo').textContent = `${p.totalElements} unit(s)`;
+  document.getElementById('pagination').innerHTML = Array.from({length: p.totalPages}, (_,i) =>
+    `<li class="page-item${i===p.number?' active':''}">
+       <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i+1}</a>
+     </li>`).join('');
+}
+
+function gotoPage(n) { page = n; loadUnits(); }
+
+document.getElementById('statusFilter').addEventListener('change', function() {
+  filterStatus = this.value; page = 0; loadUnits();
+});
+document.getElementById('wingFilter').addEventListener('change', function() {
+  page = 0; loadUnits();
+});
+
+// ── Modal open/close ──────────────────────────────────────────────────────────
+async function openCreate() {
+  editId = null;
+  _editingUnitId = null;
+  document.getElementById('uArea').dataset.savedArea = '0';
+  document.getElementById('unitModalTitle').textContent = 'Add Unit';
+  document.getElementById('unitForm').reset();
+  document.getElementById('unitFormError').classList.add('d-none');
+  document.getElementById('uWingRow').style.display = 'none';
+  document.getElementById('residentialFields').style.display = '';
+  document.getElementById('uTypeRow').style.display = '';
+  document.getElementById('complexPricingRow').style.display = 'none';
+  document.getElementById('uPricePerSqm').value = '';
+  document.getElementById('uArea').required = false;
+  document.getElementById('uAreaLabel').textContent = 'Area (m²)';
+  document.getElementById('uRent').readOnly = false;
+  document.getElementById('uRentLabel').textContent = 'Rent Amount (RWF) *';
+  document.getElementById('areaMeterWrap').style.display = 'none';
+  document.getElementById('areaErrorMsg').style.display  = 'none';
+  // Reset purpose constraint
+  document.getElementById('uPurpose').disabled = false;
+  document.getElementById('purposeLockedNote').classList.add('d-none');
+  document.getElementById('uPurpose').querySelectorAll('option').forEach(o => { o.hidden = false; o.disabled = false; });
+  if (filterProperty) {
+    document.getElementById('uProperty').value = filterProperty;
+    await loadWingsForProperty(filterProperty, document.getElementById('uWing'));
+    applyPurposeConstraint(filterProperty);
+  }
+  onAreaInput();
+  unitModal.show();
+}
+
+async function openEdit(unit) {
+  editId = unit.id;
+  _editingUnitId = unit.id;
+  document.getElementById('unitModalTitle').textContent = 'Edit Unit';
+  document.getElementById('unitFormError').classList.add('d-none');
+
+  document.getElementById('uProperty').value  = unit.propertyId || '';
+  await loadWingsForProperty(unit.propertyId, document.getElementById('uWing'));
+  applyPurposeConstraint(unit.propertyId);
+  document.getElementById('uWing').value      = unit.wingId || '';
+  document.getElementById('uNumber').value    = unit.unitNumber || '';
+  // Only set purpose if it's not locked (apartment forces RESIDENTIAL)
+  const purposeSel = document.getElementById('uPurpose');
+  if (!purposeSel.disabled) purposeSel.value = unit.unitPurpose || '';
+  document.getElementById('uType').value      = unit.unitType || '';
+  document.getElementById('uFloor').value     = unit.floorNumber != null ? unit.floorNumber : '';
+  // Store saved area so the meter can exclude it from "used" calculation
+  const savedArea = parseFloat(unit.areaSqm) || 0;
+  document.getElementById('uArea').dataset.savedArea = savedArea;
+  document.getElementById('uArea').value      = unit.areaSqm || '';
+  document.getElementById('uBeds').value      = unit.numBedrooms != null ? unit.numBedrooms : '';
+  document.getElementById('uBaths').value     = unit.numBathrooms != null ? unit.numBathrooms : '';
+  document.getElementById('uRent').value      = unit.rentAmount || '';
+  document.getElementById('uDeposit').value   = unit.depositAmount || '';
+  document.getElementById('uAmenities').value = unit.amenities || '';
+
+  // Populate complex pricing field if present
+  const prop = allPropertiesCache.find(p => String(p.id) === String(unit.propertyId));
+  if (prop && prop.category === 'COMPLEX') {
+    document.getElementById('uPricePerSqm').value = unit.pricePerSqm || '';
+    onComplexPricingChange();
+  }
+
+  onAreaInput();
+  onPurposeChange();
+  unitModal.show();
+}
+
+document.getElementById('unitForm').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  // Block submission if the area error message is currently showing a red error
+  const errElCheck = document.getElementById('areaErrorMsg');
+  if (errElCheck.style.display !== 'none' && errElCheck.className.includes('text-danger')) {
+    errElCheck.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    document.getElementById('uArea').focus();
+    return;
+  }
+
+  const spinner = document.getElementById('unitSaveSpinner');
+  spinner.classList.remove('d-none');
+
+  const propId  = parseInt(document.getElementById('uProperty').value);
+  const wingId  = parseInt(document.getElementById('uWing').value) || null;
+  const purpose = document.getElementById('uPurpose').value || null;
+
+  const prop = allPropertiesCache.find(p => String(p.id) === String(propId));
+  const isComplex   = prop && prop.category === 'COMPLEX';
+  const pricePerSqm = isComplex ? (parseFloat(document.getElementById('uPricePerSqm').value) || null) : null;
+  const areaSqm     = parseFloat(document.getElementById('uArea').value) || null;
+
+  const body = {
+    propertyId:   propId,
+    unitNumber:   document.getElementById('uNumber').value.trim(),
+    unitPurpose:  purpose,
+    unitType:     document.getElementById('uType').value || null,
+    wingId:       wingId,
+    floorNumber:  parseInt(document.getElementById('uFloor').value) >= 0 ? parseInt(document.getElementById('uFloor').value) : null,
+    areaSqm,
+    pricePerSqm,
+    numBedrooms:  parseInt(document.getElementById('uBeds').value) >= 0 ? parseInt(document.getElementById('uBeds').value) : null,
+    numBathrooms: parseInt(document.getElementById('uBaths').value) >= 0 ? parseInt(document.getElementById('uBaths').value) : null,
+    rentAmount:   parseFloat(document.getElementById('uRent').value),
+    depositAmount:parseFloat(document.getElementById('uDeposit').value) || 0,
+    amenities:    document.getElementById('uAmenities').value.trim() || null,
+  };
+
+  const res = editId ? await API.updateUnit(editId, body) : await API.createUnit(body);
+  spinner.classList.add('d-none');
+
+  if (res && res.ok) {
+    unitModal.hide();
+    delete wingsCache[propId]; // Invalidate cache
+    loadUnits();
+  } else {
+    const err = document.getElementById('unitFormError');
+    err.textContent = (res && res.data && res.data.message) || 'Failed to save unit.';
+    err.classList.remove('d-none');
+  }
+});
+
+loadPropertyOptions().then(() => loadUnits());
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>

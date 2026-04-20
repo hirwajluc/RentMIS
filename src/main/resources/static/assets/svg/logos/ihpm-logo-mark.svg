@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <!-- Navy rounded-square background (transparent variant uses this mark on any bg) -->
+  <rect width="200" height="200" rx="38" fill="#162C52"/>
+
+  <!-- House outline (white stroke) -->
+  <line x1="100" y1="30" x2="36" y2="94" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <line x1="100" y1="30" x2="164" y2="94" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <line x1="36" y1="94" x2="164" y2="94" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <line x1="36" y1="94" x2="36" y2="168" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <line x1="164" y1="94" x2="164" y2="168" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <line x1="36" y1="168" x2="164" y2="168" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Network nodes -->
+  <circle cx="100" cy="30" r="7" fill="#2EAD72"/>
+  <circle cx="36" cy="94" r="7" fill="#2EAD72"/>
+  <circle cx="164" cy="94" r="7" fill="#2EAD72"/>
+  <circle cx="100" cy="94" r="7" fill="#2EAD72"/>
+
+  <!-- Green door -->
+  <rect x="83" y="124" width="34" height="44" rx="3" fill="#2EAD72"/>
+
+  <!-- Shield badge -->
+  <circle cx="158" cy="162" r="22" fill="#1D6B42"/>
+  <polyline points="148,162 155,169 168,154" stroke="#FFFFFF" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

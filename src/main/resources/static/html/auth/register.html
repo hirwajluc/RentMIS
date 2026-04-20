@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en" class="layout-wide customizer-hide" dir="ltr"
+      data-skin="default" data-bs-theme="light"
+      data-assets-path="/assets/" data-template="horizontal-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"/>
+  <title>Register — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/pages/page-auth.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+  <style>
+    /* ── NID textbox ─────────────────────────────────────── */
+    .nid-box {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: .5rem .875rem;
+      background: #fff;
+      border: 1px solid #d0d5dd;
+      border-radius: .375rem;
+      cursor: text;
+      transition: border-color .15s, box-shadow .15s;
+      min-height: 42px;
+      overflow: hidden;
+    }
+    .nid-box:focus-within {
+      border-color: #246691;
+      box-shadow: 0 0 0 .2rem rgba(105,108,255,.25);
+      outline: none;
+    }
+    .nid-text {
+      font-family: 'Courier New', monospace;
+      font-size: 1.25rem;
+      letter-spacing: .18em;
+      white-space: nowrap;
+      flex: 1;
+    }
+    .nid-d      { color: #333; font-weight: 700; }
+    .nid-u      { color: #c5c5c5; }
+    .nid-sp     { display: inline-block; width: .45em; }
+    .nid-status { display: flex; align-items: center; margin-left: .5rem; flex-shrink: 0; font-size: 1.2rem; }
+  </style>
+</head>
+<body>
+  <div class="authentication-wrapper authentication-cover">
+
+    <!-- Logo — outside authentication-inner, same as login -->
+    <a href="/login" class="app-brand auth-cover-brand gap-3">
+      <svg width="310" height="57" viewBox="0 0 360 68" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="rmL" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0D2B55"/><stop offset="100%" stop-color="#122F5E"/>
+        </linearGradient></defs>
+        <rect x="0" y="2" width="56" height="56" rx="12" fill="url(#rmL)"/>
+        <polygon points="28,9 10,23 46,23" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>
+        <rect x="14" y="23" width="28" height="20" rx="2" fill="none" stroke="#fff" stroke-width="1.8"/>
+        <rect x="21" y="31" width="10" height="12" rx="2" fill="#2A9D5C"/>
+        <text font-family="Arial,Helvetica,sans-serif" font-weight="700" fill="#0D2B55" letter-spacing="0.04em" x="68" y="33" font-size="23">RentMIS</text>
+        <text font-family="Arial,Helvetica,sans-serif" font-weight="400" fill="#4A6A8A" letter-spacing="0.14em" x="69" y="51" font-size="9">RENT MANAGEMENT SYSTEM</text>
+        <rect x="69" y="56" width="280" height="1.2" rx="1" fill="#C8A84B" opacity="0.7"/>
+      </svg>
+    </a>
+
+    <div class="authentication-inner row m-0">
+
+      <!-- Cover image — same structure as login -->
+      <div class="d-none d-xl-flex col-xl-8 p-0">
+        <div class="auth-cover-bg d-flex justify-content-center align-items-center">
+          <img src="/assets/img/illustrations/auth-register-illustration-light.png"
+               alt="register" class="my-5 auth-illustration"
+               data-app-light-img="illustrations/auth-register-illustration-light.png"
+               data-app-dark-img="illustrations/auth-register-illustration-dark.png"/>
+          <img src="/assets/img/illustrations/bg-shape-image-light.png"
+               alt="" class="platform-bg"
+               data-app-light-img="illustrations/bg-shape-image-light.png"
+               data-app-dark-img="illustrations/bg-shape-image-dark.png"/>
+        </div>
+      </div>
+
+      <!-- Register form -->
+      <div class="d-flex col-12 col-xl-4 align-items-center authentication-bg p-sm-12 p-6">
+        <div class="w-px-400 mx-auto mt-12 pt-5">
+
+          <h4 class="mb-1">Create Account</h4>
+          <p class="mb-6 text-muted">Enter your National ID to get started</p>
+
+          <div id="regMsg" class="d-none mb-4"></div>
+
+          <form id="regForm" autocomplete="off" novalidate>
+
+            <!-- ── 1. National ID ─────────────────────────── -->
+            <div class="mb-5">
+              <label class="form-label">
+                National ID <span class="text-danger">*</span>
+                <span class="text-muted fw-normal" style="font-size:.78rem"> 16 digits</span>
+              </label>
+
+              <!-- Styled textbox (visible) -->
+              <div class="nid-box" id="nidBox" onclick="nidRaw.focus()">
+                <div class="nid-text" id="nidText"></div>
+                <div class="nid-status">
+                  <span id="nidStatusSpin" class="spinner-border spinner-border-sm text-primary d-none"></span>
+                  <i    id="nidStatusOk"   class="ti tabler-circle-check text-success d-none"></i>
+                  <i    id="nidStatusErr"  class="ti tabler-circle-x     text-danger  d-none"></i>
+                </div>
+              </div>
+
+              <!-- Hidden real input -->
+              <input type="text" id="nidRaw" inputmode="numeric" maxlength="16"
+                     autocomplete="off" spellcheck="false"
+                     style="position:absolute;opacity:0;pointer-events:none;width:0;height:0"
+                     required/>
+
+              <small id="nidHint" class="text-muted mt-1 d-block">Format: X · XXXX · X · XXXXXXX · X · XX</small>
+            </div>
+
+            <!-- ── 2. Names (auto-filled) ─────────────────── -->
+            <div class="row g-3 mb-4">
+              <div class="col-6">
+                <label class="form-label">First Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="firstName" required placeholder="John"/>
+              </div>
+              <div class="col-6">
+                <label class="form-label">Last Name <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" id="lastName" required placeholder="Doe"/>
+              </div>
+            </div>
+
+            <!-- ── 3. Email ───────────────────────────────── -->
+            <div class="mb-4">
+              <label class="form-label">Email <span class="text-danger">*</span></label>
+              <input type="email" class="form-control" id="email" required placeholder="john@example.com"/>
+            </div>
+
+            <!-- ── 4. Phone ───────────────────────────────── -->
+            <div class="mb-4">
+              <label class="form-label">Phone</label>
+              <input type="text" class="form-control" id="phone" value="+250 " placeholder="+250 788 000 000"/>
+            </div>
+
+            <!-- ── 5. Role ────────────────────────────────── -->
+            <div class="mb-4">
+              <label class="form-label">Role <span class="text-danger">*</span></label>
+              <select class="form-select" id="role" required>
+                <option value="TENANT">Tenant</option>
+                <option value="LANDLORD">Landlord / Property Owner</option>
+                <option value="AGENT">Agent / Broker</option>
+              </select>
+            </div>
+
+            <!-- ── 6. Language ───────────────────────────── -->
+            <div class="mb-4">
+              <label class="form-label">Preferred Language</label>
+              <select class="form-select" id="language">
+                <option value="ENGLISH">English</option>
+                <option value="KINYARWANDA">Kinyarwanda</option>
+                <option value="FRENCH">French</option>
+              </select>
+            </div>
+
+            <!-- ── 7. Password ────────────────────────────── -->
+            <div class="mb-4">
+              <label class="form-label">Password <span class="text-danger">*</span></label>
+              <div class="input-group input-group-merge">
+                <input type="password" class="form-control" id="password" required placeholder="Min 8 characters"/>
+                <span class="input-group-text cursor-pointer" onclick="togglePwd('password',this)">
+                  <i class="icon-base ti tabler-eye-off"></i>
+                </span>
+              </div>
+            </div>
+            <div class="mb-6">
+              <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+              <input type="password" class="form-control" id="confirmPassword" required placeholder="Repeat password"/>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2" id="regBtn">
+              <span id="regBtnText">Create Account</span>
+              <span id="regSpinner" class="spinner-border spinner-border-sm d-none"></span>
+            </button>
+          </form>
+
+          <p class="text-center mt-5 mb-0">Already have an account? <a href="/login">Sign in</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Language switcher (fixed top-right, session-only) -->
+  <div style="position:fixed;top:16px;right:20px;z-index:9999">
+    <div class="dropdown">
+      <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1 px-2 py-1"
+              type="button" data-bs-toggle="dropdown" aria-expanded="false" id="authLangBtn">
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" style="min-width:150px" id="authLangMenu"></ul>
+    </div>
+  </div>
+
+  <script src="/assets/vendor/libs/jquery/jquery.js"></script>
+  <script src="/assets/vendor/libs/popper/popper.js"></script>
+  <script src="/assets/vendor/js/bootstrap.js"></script>
+  <script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+  <script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+  <script src="/assets/vendor/js/menu.js"></script>
+  <script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script>
+  (function() {
+    var LANGS = { ENGLISH: { flag: '🇬🇧', label: 'English' }, KINYARWANDA: { flag: '🇷🇼', label: 'Kinyarwanda' }, FRENCH: { flag: '🇫🇷', label: 'French' } };
+    var active = (sessionStorage.getItem('viewLangSession') || 'ENGLISH').toUpperCase();
+    var m = LANGS[active] || LANGS.ENGLISH;
+    document.getElementById('authLangBtn').innerHTML = '<span style="font-size:1.2rem;line-height:1">' + m.flag + '</span><span class="small">' + m.label + '</span>';
+    var items = Object.entries(LANGS).map(function(e) {
+      return '<li><a class="dropdown-item d-flex align-items-center gap-2' + (e[0] === active ? ' active' : '') + '" href="javascript:void(0)" onclick="setAuthLang(\'' + e[0] + '\')">'
+        + '<span style="font-size:1.1rem;line-height:1">' + e[1].flag + '</span><span>' + e[1].label + '</span></a></li>';
+    }).join('');
+    document.getElementById('authLangMenu').innerHTML = '<li><h6 class="dropdown-header small">Display Language</h6></li>' + items;
+  })();
+  function setAuthLang(code) {
+    if (sessionStorage.getItem('viewLangSession') === code) return;
+    sessionStorage.setItem('viewLangSession', code);
+    window.location.reload();
+  }
+  </script>
+  <script>
+  if (Auth.isLoggedIn()) window.location.href = '/dashboard';
+
+  /* ── NID input logic ──────────────────────────────────────────────── */
+  // Rwanda NID: 1 · 4 · 7 · 1 · 2  (16 digits total)
+  const GROUPS  = [1, 4, 1, 7, 1, 2];
+  const TOTAL   = 16;
+  const nidRaw      = document.getElementById('nidRaw');
+  const nidText     = document.getElementById('nidText');
+  const nidHint     = document.getElementById('nidHint');
+  const nidStatSpin = document.getElementById('nidStatusSpin');
+  const nidStatOk   = document.getElementById('nidStatusOk');
+  const nidStatErr  = document.getElementById('nidStatusErr');
+
+  function buildDisplay(digits) {
+    // Build grouped string: each char is either the digit or '_'
+    // Groups separated by a space span
+    let pos = 0;
+    let html = '';
+    GROUPS.forEach((len, gi) => {
+      if (gi > 0) html += '<span class="nid-sp"></span>';
+      for (let i = 0; i < len; i++, pos++) {
+        if (pos < digits.length) {
+          html += `<span class="nid-d">${digits[pos]}</span>`;
+        } else {
+          html += `<span class="nid-u">_</span>`;
+        }
+      }
+    });
+    return html;
+  }
+
+  function renderNid() {
+    const digits = nidRaw.value;
+    nidText.innerHTML = buildDisplay(digits);
+  }
+
+  function setStatus(state) {
+    // state: '' | 'loading' | 'ok' | 'err'
+    nidStatSpin.classList.toggle('d-none', state !== 'loading');
+    nidStatOk  .classList.toggle('d-none', state !== 'ok');
+    nidStatErr .classList.toggle('d-none', state !== 'err');
+  }
+  setStatus('');
+
+  // Paste: strip non-digits, keep first 16
+  nidRaw.addEventListener('paste', e => {
+    e.preventDefault();
+    const pasted = (e.clipboardData || window.clipboardData).getData('text');
+    const digits = pasted.replace(/\D/g, '').slice(0, TOTAL);
+    nidRaw.value = digits;
+    renderNid();
+    onNidChange(digits);
+  });
+
+  // Keydown: block non-digits and enforce 16-char cap
+  nidRaw.addEventListener('keydown', e => {
+    const ctrl = e.ctrlKey || e.metaKey;
+    const ok   = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Enter'];
+    if (ctrl || ok.includes(e.key)) return;
+    if (!/^\d$/.test(e.key)) { e.preventDefault(); return; }
+    if (nidRaw.value.length >= TOTAL) e.preventDefault();
+  });
+
+  let nidTimer;
+  nidRaw.addEventListener('input', () => {
+    nidRaw.value = nidRaw.value.replace(/\D/g, '').slice(0, TOTAL);
+    renderNid();
+    // Clear status whenever value changes (will be re-set by onNidChange)
+    setStatus('');
+    onNidChange(nidRaw.value);
+  });
+
+  function onNidChange(digits) {
+    clearTimeout(nidTimer);
+    setStatus('');
+
+    if (digits.length === 0) {
+      nidHint.className   = 'text-muted small mt-1 d-block';
+      nidHint.innerHTML   = 'Format: X &middot; XXXX &middot; X &middot; XXXXXXX &middot; X &middot; XX';
+      return;
+    }
+    if (digits.length < TOTAL) {
+      nidHint.className   = 'text-muted small mt-1 d-block';
+      nidHint.textContent = `${digits.length} / ${TOTAL} digits`;
+      return;
+    }
+
+    // 16 digits — call NIDA
+    nidHint.className   = 'text-muted small mt-1 d-block';
+    nidHint.textContent = 'Verifying with NIDA…';
+    setStatus('loading');
+
+    nidTimer = setTimeout(async () => {
+      try {
+        const res  = await fetch('/api/auth/verify-nid/' + digits);
+        const json = await res.json();
+        const d    = json.data || {};
+        if (d.foreName || d.surnames) {
+          document.getElementById('firstName').value = d.surnames  || '';
+          document.getElementById('lastName').value  = d.foreName  || '';
+          setStatus('ok');
+          nidHint.className   = 'text-success small mt-1 d-block';
+          nidHint.textContent = 'Name auto-filled from NIDA';
+          document.getElementById('email').focus();
+        } else {
+          setStatus('err');
+          nidHint.className   = 'text-danger small mt-1 d-block';
+          nidHint.textContent = d.error || 'NID not found — fill your name manually';
+        }
+      } catch {
+        setStatus('err');
+        nidHint.className   = 'text-danger small mt-1 d-block';
+        nidHint.textContent = 'NIDA unavailable — fill your name manually';
+      }
+    }, 500);
+  }
+
+  // Initial render (all underscores)
+  renderNid();
+
+  /* ── Password toggle ──────────────────────────────────────────────── */
+  function togglePwd(id, el) {
+    const inp  = document.getElementById(id);
+    const icon = el.querySelector('i');
+    if (inp.type === 'password') { inp.type = 'text';     icon.className = 'icon-base ti tabler-eye'; }
+    else                         { inp.type = 'password'; icon.className = 'icon-base ti tabler-eye-off'; }
+  }
+
+  /* ── Form submit ──────────────────────────────────────────────────── */
+  document.getElementById('regForm').addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const nidVal = nidRaw.value;
+    if (nidVal.length !== TOTAL) {
+      showMsg('danger', 'Please enter all 16 digits of your National ID.');
+      nidRaw.focus();
+      return;
+    }
+    const pwd  = document.getElementById('password').value;
+    const conf = document.getElementById('confirmPassword').value;
+    if (pwd !== conf) { showMsg('danger', 'Passwords do not match.'); return; }
+
+    const sp  = document.getElementById('regSpinner');
+    const btn = document.getElementById('regBtn');
+    sp.classList.remove('d-none'); btn.disabled = true;
+
+    const res = await API.register({
+      firstName:  document.getElementById('firstName').value,
+      lastName:   document.getElementById('lastName').value,
+      email:      document.getElementById('email').value,
+      phone:      document.getElementById('phone').value || null,
+      nationalId: nidVal,
+      role:       document.getElementById('role').value,
+      language:   document.getElementById('language').value,
+      password:   pwd
+    });
+
+    sp.classList.add('d-none'); btn.disabled = false;
+
+    if (res && res.ok) {
+      showMsg('success', 'Account created! Redirecting to login…');
+      setTimeout(() => window.location.href = '/login', 1800);
+    } else {
+      showMsg('danger', res?.data?.message || 'Registration failed. Please try again.');
+    }
+  });
+
+  function showMsg(type, msg) {
+    const el = document.getElementById('regMsg');
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+    el.classList.remove('d-none');
+  }
+
+  // Focus NID on load
+  window.addEventListener('load', () => nidRaw.focus());
+  </script>
+  <footer class="text-center py-3 mt-4"><p class="text-muted small mb-0">Copyright &copy; <script>document.write(new Date().getFullYear())</script> <strong>Good Link Solutions</strong>. All rights reserved.</p></footer>
+</body>
+</html>

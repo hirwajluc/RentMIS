@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en" class="layout-wide customizer-hide" dir="ltr" data-skin="default" data-bs-theme="light"
+      data-assets-path="/assets/" data-template="horizontal-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"/>
+  <title>Login — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/pages/page-auth.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+</head>
+<body>
+  <div class="authentication-wrapper authentication-cover">
+    <!-- Brand -->
+    <a href="/login" class="app-brand auth-cover-brand gap-3">
+      <svg width="310" height="57" viewBox="0 0 360 68" xmlns="http://www.w3.org/2000/svg">
+        <defs><linearGradient id="rmL" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0D2B55"/><stop offset="100%" stop-color="#122F5E"/>
+        </linearGradient></defs>
+        <rect x="0" y="2" width="56" height="56" rx="12" fill="url(#rmL)"/>
+        <polygon points="28,9 10,23 46,23" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/>
+        <rect x="14" y="23" width="28" height="20" rx="2" fill="none" stroke="#fff" stroke-width="1.8"/>
+        <rect x="21" y="31" width="10" height="12" rx="2" fill="#2A9D5C"/>
+        <text font-family="Arial,Helvetica,sans-serif" font-weight="700" fill="#0D2B55" letter-spacing="0.04em" x="68" y="33" font-size="23">RentMIS</text>
+        <text font-family="Arial,Helvetica,sans-serif" font-weight="400" fill="#4A6A8A" letter-spacing="0.14em" x="69" y="51" font-size="9">RENT MANAGEMENT SYSTEM</text>
+        <rect x="69" y="56" width="280" height="1.2" rx="1" fill="#C8A84B" opacity="0.7"/>
+      </svg>
+    </a>
+
+    <div class="authentication-inner row m-0">
+      <!-- Cover image -->
+      <div class="d-none d-xl-flex col-xl-8 p-0">
+        <div class="auth-cover-bg d-flex justify-content-center align-items-center">
+          <img src="/assets/img/illustrations/auth_login_pic.png"
+               alt="login" class="my-5 auth-illustration"
+               data-app-light-img="illustrations/auth_login_pic.png"
+               data-app-dark-img="illustrations/auth_login_pic.png"/>
+          <img src="/assets/img/illustrations/bg-shape-image-light.png"
+               alt="" class="platform-bg"
+               data-app-light-img="illustrations/bg-shape-image-light.png"
+               data-app-dark-img="illustrations/bg-shape-image-dark.png"/>
+        </div>
+      </div>
+
+      <!-- Login form -->
+      <div class="d-flex col-12 col-xl-4 align-items-center authentication-bg p-sm-12 p-6">
+        <div class="w-px-400 mx-auto mt-12 pt-5">
+          <h4 class="mb-1">Welcome to RentMIS</h4>
+          <p class="mb-6">Rent Management Information System<br>Sign in to continue</p>
+
+          <div id="loginError" class="alert alert-danger d-none" role="alert"></div>
+
+          <form id="loginForm" class="mb-6">
+            <div class="mb-6">
+              <label for="email" class="form-label">Email / Username</label>
+              <input type="text" class="form-control" id="email" name="email"
+                     placeholder="Enter your email" autofocus required/>
+            </div>
+            <div class="mb-6 form-password-toggle">
+              <label class="form-label" for="password">Password</label>
+              <div class="input-group input-group-merge">
+                <input type="password" id="password" class="form-control" name="password"
+                       placeholder="············" required/>
+                <span class="input-group-text cursor-pointer">
+                  <i class="icon-base ti tabler-eye-off"></i>
+                </span>
+              </div>
+            </div>
+            <div class="my-8">
+              <div class="form-check mb-0 ms-2">
+                <input class="form-check-input" type="checkbox" id="remember-me"/>
+                <label class="form-check-label" for="remember-me">Remember Me</label>
+              </div>
+            </div>
+            <button class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2"
+                    type="submit" id="loginBtn">
+              <span id="loginBtnText">Sign in</span>
+              <span id="loginBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+            </button>
+          </form>
+
+          <div class="text-center">
+            <p class="mb-0">New tenant? <a href="/register">Create an account</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Language switcher (fixed top-right, session-only) -->
+  <div style="position:fixed;top:16px;right:20px;z-index:9999">
+    <div class="dropdown">
+      <button class="btn btn-sm btn-outline-secondary dropdown-toggle d-flex align-items-center gap-1 px-2 py-1"
+              type="button" data-bs-toggle="dropdown" aria-expanded="false" id="authLangBtn">
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end" style="min-width:150px" id="authLangMenu"></ul>
+    </div>
+  </div>
+
+  <script src="/assets/vendor/libs/jquery/jquery.js"></script>
+  <script src="/assets/vendor/libs/popper/popper.js"></script>
+  <script src="/assets/vendor/js/bootstrap.js"></script>
+  <script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+  <script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+  <script src="/assets/vendor/js/menu.js"></script>
+  <script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+  <script src="/static/js/api.js"></script>
+  <script src="/static/js/auth.js"></script>
+  <script>
+  (function() {
+    var LANGS = { ENGLISH: { flag: '🇬🇧', label: 'English' }, KINYARWANDA: { flag: '🇷🇼', label: 'Kinyarwanda' }, FRENCH: { flag: '🇫🇷', label: 'French' } };
+    var active = (sessionStorage.getItem('viewLangSession') || 'ENGLISH').toUpperCase();
+    var m = LANGS[active] || LANGS.ENGLISH;
+    document.getElementById('authLangBtn').innerHTML = '<span style="font-size:1.2rem;line-height:1">' + m.flag + '</span><span class="small">' + m.label + '</span>';
+    var items = Object.entries(LANGS).map(function(e) {
+      return '<li><a class="dropdown-item d-flex align-items-center gap-2' + (e[0] === active ? ' active' : '') + '" href="javascript:void(0)" onclick="setAuthLang(\'' + e[0] + '\')">'
+        + '<span style="font-size:1.1rem;line-height:1">' + e[1].flag + '</span><span>' + e[1].label + '</span></a></li>';
+    }).join('');
+    document.getElementById('authLangMenu').innerHTML = '<li><h6 class="dropdown-header small">Display Language</h6></li>' + items;
+  })();
+  function setAuthLang(code) {
+    if (sessionStorage.getItem('viewLangSession') === code) return;
+    sessionStorage.setItem('viewLangSession', code);
+    window.location.reload();
+  }
+  </script>
+  <footer class="text-center py-3 mt-4"><p class="text-muted small mb-0">Copyright &copy; <script>document.write(new Date().getFullYear())</script> <strong>Good Link Solutions</strong>. All rights reserved.</p></footer>
+</body>
+</html>

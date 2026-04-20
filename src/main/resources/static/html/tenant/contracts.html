@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">My Contracts — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+          <h4 class="mb-6">My Contracts</h4>
+          <div id="contractsContainer">
+            <div class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+          </div>
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- Sign Confirmation Modal -->
+<div class="modal fade" id="signModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="ti tabler-signature me-2"></i>Confirm Signature</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3">
+          By signing you agree to all terms of this lease. Your signature will be recorded
+          on the blockchain and <strong>cannot be undone</strong>. Enter your password to confirm.
+        </p>
+        <div id="signErr" class="alert alert-danger d-none small"></div>
+        <label class="form-label fw-semibold">Your Password <span class="text-danger">*</span></label>
+        <div class="input-group input-group-merge">
+          <input type="password" class="form-control" id="signPassword"
+                 placeholder="············" autocomplete="current-password"/>
+          <span class="input-group-text cursor-pointer" onclick="toggleSignPwd()">
+            <i id="signPwdIcon" class="ti tabler-eye-off"></i>
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="confirmSignBtn" onclick="confirmSign()">
+          <i class="ti tabler-check me-1"></i>
+          <span id="signBtnTxt">Sign Contract</span>
+          <span id="signBtnSpin" class="spinner-border spinner-border-sm d-none ms-1"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+const signModal = new bootstrap.Modal(document.getElementById('signModal'));
+let signingContractId = null;
+const statusColor = { ACTIVE:'success', PENDING_SIGNATURE:'warning', DRAFT:'secondary', EXPIRED:'danger', TERMINATED:'dark', PENDING_RESIGN:'danger' };
+const rwf = n => 'RWF ' + (n||0).toLocaleString();
+
+(async () => {
+  const user = Auth.getUser();
+  const res  = await API.getContracts({ tenantId: user.id });
+  const container = document.getElementById('contractsContainer');
+
+  if (!res || !res.ok || !res.data.data || !res.data.data.content.length) {
+    container.innerHTML = `<div class="card"><div class="card-body text-center py-5">
+      <i class="ti tabler-file-off fs-1 text-muted mb-3 d-block"></i>
+      <p class="text-muted">No contracts found</p></div></div>`;
+    return;
+  }
+
+  container.innerHTML = res.data.data.content.map(c => {
+    const isFullySigned  = c.landlordSignedAt && c.tenantSignedAt;
+    const isPendingResign = c.status === 'PENDING_RESIGN';
+    const pdfLabel = isFullySigned ? 'Final Contract PDF' : 'View Draft PDF';
+    const pdfIcon  = isFullySigned ? 'tabler-file-certificate' : 'tabler-file-type-pdf';
+    const pdfClass = isFullySigned ? 'btn-success' : 'btn-outline-secondary';
+    const needsResign = isPendingResign && !c.tenantSignedAt;
+
+    const tamperBanner = isPendingResign ? `
+      <div class="alert alert-danger mb-0 d-flex gap-2 align-items-start">
+        <i class="ti tabler-alert-triangle fs-4 mt-1 flex-shrink-0"></i>
+        <div>
+          <strong>Action Required: Contract Modified</strong><br>
+          <span class="small">Your landlord made changes to this contract after it was signed.
+          All previous signatures have been invalidated${c.tamperDetectedAt ? ' on <strong>' + new Date(c.tamperDetectedAt).toLocaleString() + '</strong>' : ''}.
+          Please review the current terms and re-sign if you accept.</span>
+        </div>
+      </div>` : '';
+
+    return `<div class="card mb-4 ${isPendingResign ? 'border-danger' : ''}">
+      <div class="card-header d-flex justify-content-between align-items-center ${isPendingResign ? 'bg-label-danger' : ''}">
+        <div>
+          <h5 class="mb-0">${c.contractNumber}</h5>
+          <small class="text-muted">Unit: ${c.unit ? c.unit.unitNumber : '–'}
+            ${c.unit && c.unit.propertyName ? ' — ' + c.unit.propertyName : ''}</small>
+        </div>
+        <span class="badge bg-label-${statusColor[c.status]||'secondary'}">${isPendingResign ? 'RE-SIGN REQUIRED' : c.status.replace('_',' ')}</span>
+      </div>
+      ${tamperBanner ? `<div class="card-body pb-0">${tamperBanner}</div>` : ''}
+      <div class="card-body ${tamperBanner ? 'pt-3' : ''}">
+        <div class="row g-3">
+          <div class="col-sm-6 col-md-3">
+            <small class="text-muted d-block">Monthly Rent</small>
+            <strong>${rwf(c.monthlyRent)}</strong>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <small class="text-muted d-block">Period</small>
+            <span>${c.startDate || '–'} → ${c.endDate || '–'}</span>
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <small class="text-muted d-block">Landlord</small>
+            ${c.landlordSignedAt
+              ? `<span class="text-success"><i class="ti tabler-check me-1"></i>Signed</span>`
+              : `<span class="text-warning"><i class="ti tabler-clock me-1"></i>Pending</span>`}
+          </div>
+          <div class="col-sm-6 col-md-3">
+            <small class="text-muted d-block">Your Signature</small>
+            ${c.tenantSignedAt
+              ? `<span class="text-success"><i class="ti tabler-check me-1"></i>Signed</span>`
+              : `<span class="${isPendingResign ? 'text-danger fw-semibold' : 'text-warning'}">
+                   <i class="ti ${isPendingResign ? 'tabler-alert-triangle' : 'tabler-clock'} me-1"></i>
+                   ${isPendingResign ? 'Re-Sign Required' : 'Pending'}
+                 </span>`}
+          </div>
+        </div>
+
+        ${isFullySigned && c.blockchainTxHash ? `
+        <div class="mt-3 p-2 rounded border border-success bg-label-success">
+          <small class="text-success fw-semibold"><i class="ti tabler-link me-1"></i>Blockchain Ref:</small>
+          <code class="small d-block">${c.blockchainTxHash}</code>
+        </div>` : c.contractHash && !isPendingResign ? `
+        <div class="mt-3 p-2 bg-light rounded">
+          <small class="text-muted"><i class="ti tabler-shield me-1"></i>Contract Hash:</small>
+          <code class="small d-block text-truncate">${c.contractHash}</code>
+        </div>` : ''}
+      </div>
+      <div class="card-footer d-flex gap-2 flex-wrap">
+        <button onclick="API.openContractPdf(${c.id})" class="btn btn-sm ${pdfClass}">
+          <i class="ti ${pdfIcon} me-1"></i>${isPendingResign ? 'Review Draft PDF' : pdfLabel}
+        </button>
+        ${c.status === 'PENDING_SIGNATURE' && !c.tenantSignedAt ? `
+        <button class="btn btn-sm btn-success" onclick="openSign(${c.id}, false)">
+          <i class="ti tabler-signature me-1"></i>Sign This Contract
+        </button>` : ''}
+        ${needsResign ? `
+        <button class="btn btn-sm btn-warning" onclick="openSign(${c.id}, true)">
+          <i class="ti tabler-refresh-alert me-1"></i>Review &amp; Re-Sign
+        </button>` : ''}
+        ${isPendingResign && c.tenantSignedAt && !c.landlordSignedAt ? `
+        <span class="btn btn-sm btn-outline-secondary disabled">
+          <i class="ti tabler-clock me-1"></i>Waiting for landlord to re-sign
+        </span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+})();
+
+function openSign(contractId, isResign) {
+  signingContractId = contractId;
+  document.getElementById('signPassword').value = '';
+  document.getElementById('signErr').classList.add('d-none');
+  document.getElementById('signBtnTxt').textContent = isResign ? 'Re-Sign Contract' : 'Sign Contract';
+  document.getElementById('signBtnSpin').classList.add('d-none');
+  document.querySelector('#signModal .modal-title').innerHTML = isResign
+    ? '<i class="ti tabler-refresh-alert me-2 text-warning"></i>Re-Sign Contract'
+    : '<i class="ti tabler-signature me-2"></i>Confirm Signature';
+  document.querySelector('#signModal .modal-body p').innerHTML = isResign
+    ? '<span class="text-danger fw-semibold">The contract terms were changed after the original signing.</span> ' +
+      'Please review the draft PDF carefully before re-signing. By re-signing you acknowledge and accept the current terms. ' +
+      'Enter your password to confirm.'
+    : 'By signing you agree to all terms of this lease. Your signature will be recorded ' +
+      'on the blockchain and <strong>cannot be undone</strong>. Enter your password to confirm.';
+  document.getElementById('confirmSignBtn').className = isResign
+    ? 'btn btn-warning' : 'btn btn-success';
+  signModal.show();
+  document.getElementById('signModal').addEventListener('shown.bs.modal',
+    () => document.getElementById('signPassword').focus(), { once: true });
+}
+
+function toggleSignPwd() {
+  const inp  = document.getElementById('signPassword');
+  const icon = document.getElementById('signPwdIcon');
+  const show = inp.type === 'password';
+  inp.type   = show ? 'text' : 'password';
+  icon.className = show ? 'ti tabler-eye' : 'ti tabler-eye-off';
+}
+
+async function confirmSign() {
+  const password = document.getElementById('signPassword').value.trim();
+  if (!password) {
+    const err = document.getElementById('signErr');
+    err.textContent = 'Please enter your password.';
+    err.classList.remove('d-none');
+    return;
+  }
+  const spin = document.getElementById('signBtnSpin');
+  const btn  = document.getElementById('confirmSignBtn');
+  spin.classList.remove('d-none');
+  btn.disabled = true;
+  document.getElementById('signErr').classList.add('d-none');
+
+  const res = await API.signContract(signingContractId, password);
+
+  spin.classList.add('d-none');
+  btn.disabled = false;
+
+  if (res && res.ok) {
+    signModal.hide();
+    location.reload();
+  } else {
+    const err = document.getElementById('signErr');
+    err.textContent = (res && res.data && res.data.message) || 'Signing failed. Check your password.';
+    err.classList.remove('d-none');
+    document.getElementById('signPassword').value = '';
+    document.getElementById('signPassword').focus();
+  }
+}
+
+document.getElementById('signPassword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmSign();
+});
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>

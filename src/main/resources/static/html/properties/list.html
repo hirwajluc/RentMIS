@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Properties — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+  <style>
+    .step-indicator { display:flex; gap:0; margin-bottom:1.5rem; }
+    .step-indicator .step { flex:1; text-align:center; padding:.5rem .25rem; font-size:.78rem;
+      border-bottom:3px solid #e0e0e0; color:#aaa; transition:.2s; }
+    .step-indicator .step.active { border-color:#246691; color:#246691; font-weight:600; }
+    .step-indicator .step.done   { border-color:#71dd37; color:#71dd37; }
+    .category-card { cursor:pointer; border:2px solid #e0e0e0; border-radius:10px;
+      padding:1.25rem .75rem; text-align:center; transition:.2s; }
+    .category-card:hover { border-color:#246691; background:#f0f6fa; }
+    .category-card.selected { border-color:#246691; background:#e3f0f7; }
+    .category-card .icon { font-size:2rem; margin-bottom:.5rem; }
+    .category-card .label { font-weight:600; font-size:.85rem; }
+    .category-card .sub   { font-size:.75rem; color:#888; margin-top:.2rem; }
+  </style>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <div class="d-flex align-items-center justify-content-between mb-6">
+            <div>
+              <h4 class="mb-1">Properties</h4>
+              <p class="text-muted mb-0">Manage all rental properties</p>
+            </div>
+            <button class="btn btn-primary" onclick="openCreate()">
+              <i class="ti tabler-plus me-2"></i>Add Property
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div class="input-group w-auto" style="max-width:280px">
+                <span class="input-group-text"><i class="ti tabler-search"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search properties…"/>
+              </div>
+            </div>
+            <div class="card-datatable table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>#</th><th>Name</th><th>Category</th><th>Location</th>
+                    <th>Units</th><th>Floors</th><th>Landlord</th><th>Status</th><th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="propertiesBody">
+                  <tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-primary" role="status"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <small class="text-muted" id="tableInfo"></small>
+              <nav><ul class="pagination pagination-sm mb-0" id="pagination"></ul></nav>
+            </div>
+          </div>
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- ═══ Property Modal (multi-step) ══════════════════════════════════════════ -->
+<div class="modal fade" id="propertyModal" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalTitle">Add Property</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- Step indicator -->
+      <div class="px-4 pt-3">
+        <div class="step-indicator" id="stepIndicator">
+          <div class="step active" id="sInd1">1. Category</div>
+          <div class="step" id="sInd2">2. Address</div>
+          <div class="step" id="sInd3">3. Wings</div>
+        </div>
+      </div>
+
+      <form id="propertyForm">
+        <div class="modal-body">
+          <div id="formError" class="alert alert-danger d-none mb-3"></div>
+
+          <!-- ── Step 1: Category ── -->
+          <div id="step1">
+            <p class="text-muted small mb-3">Select the property category. This determines which fields are required.</p>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <div class="category-card" data-cat="FULL_HOUSE" onclick="selectCategory(this)">
+                  <div class="icon">🏠</div>
+                  <div class="label">Full House</div>
+                  <div class="sub">Single rentable home</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="category-card" data-cat="APARTMENT_BUILDING" onclick="selectCategory(this)">
+                  <div class="icon">🏢</div>
+                  <div class="label">Apartment Building</div>
+                  <div class="sub">Multi-unit residential</div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="category-card" data-cat="COMPLEX" onclick="selectCategory(this)">
+                  <div class="icon">🏬</div>
+                  <div class="label">Complex</div>
+                  <div class="sub">Mall, mixed-use, commercial</div>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3" id="landUseRow">
+              <label class="form-label">Land Use <small class="text-muted">(auto-derived, editable)</small></label>
+              <select class="form-select" id="pLandUse">
+                <option value="">Auto</option>
+                <option value="RESIDENTIAL">Residential</option>
+                <option value="COMMERCIAL">Commercial</option>
+                <option value="MIXED">Mixed</option>
+              </select>
+            </div>
+
+            <!-- Inline: Full House fields (shown when FULL_HOUSE selected) -->
+            <div id="step1FhFields" class="d-none mt-3">
+              <hr class="my-3"/>
+              <p class="text-muted small mb-3">Configure this Full House as a single rentable unit.</p>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Bedrooms</label>
+                  <input type="number" class="form-control" id="pBedrooms" min="0" max="20"/>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Bathrooms</label>
+                  <input type="number" class="form-control" id="pBathrooms" min="0" max="10"/>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Parking Spaces</label>
+                  <input type="number" class="form-control" id="pParking" min="0" max="50"/>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Rent Amount (RWF) *</label>
+                  <input type="number" class="form-control" id="pHouseRent" min="0"/>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Area (m²)</label>
+                  <input type="number" class="form-control" id="pHouseArea" min="0" step="0.01"/>
+                </div>
+              </div>
+            </div>
+
+            <!-- Inline: Multi-unit info (shown when APARTMENT or COMPLEX selected) -->
+            <div id="step1MuInfo" class="d-none mt-3">
+              <hr class="my-3"/>
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Total Area (m²) <span class="text-danger">*</span></label>
+                  <input type="number" class="form-control" id="pTotalArea" min="1" step="0.01" placeholder="e.g. 2000"/>
+                  <div class="form-text">Shared across all floors/units. Units cannot exceed this total.</div>
+                </div>
+              </div>
+              <div class="alert alert-info py-2 px-3 small mb-0">
+                <i class="ti tabler-info-circle me-1"></i>
+                <span id="step1MuHint"></span>
+                <br/><strong>Floors</strong> and <strong>Total Units</strong> are auto-derived from the units you register — no manual entry needed.
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Step 2: Rwanda Address ── -->
+          <div id="step2" class="d-none">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Property Name *</label>
+                <input type="text" class="form-control" id="pName" required/>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">UPI <small class="text-muted">(Unique Parcel Identifier)</small></label>
+                <input type="text" class="form-control" id="pUpi" placeholder="e.g. 1/01/01/01/001"/>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Province *</label>
+                <select class="form-select" id="pProvince" required onchange="onProvinceChange()">
+                  <option value="">Select Province</option>
+                  <option value="Kigali City">Kigali City</option>
+                  <option value="Northern Province">Northern Province</option>
+                  <option value="Southern Province">Southern Province</option>
+                  <option value="Eastern Province">Eastern Province</option>
+                  <option value="Western Province">Western Province</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">District *</label>
+                <select class="form-select" id="pDistrict" required onchange="onDistrictChange()">
+                  <option value="">Select District</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Sector</label>
+                <select class="form-select" id="pSector" onchange="onSectorChange()">
+                  <option value="">Select Sector</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Cell</label>
+                <input type="text" class="form-control" id="pCell" placeholder="e.g. Amahoro"/>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Village</label>
+                <input type="text" class="form-control" id="pVillage" placeholder="e.g. Urukundo"/>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Street / Plot Address *</label>
+                <input type="text" class="form-control" id="pAddress" required placeholder="e.g. KG 5 Ave, Plot 12"/>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Description</label>
+                <textarea class="form-control" id="pDesc" rows="2" placeholder="Optional notes about the property"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Step 3: Wings ── -->
+          <div id="step3" class="d-none">
+            <div id="wingsToggleRow" class="mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="pHasWings" onchange="onHasWingsChange()"/>
+                <label class="form-check-label" for="pHasWings">
+                  This property has Wings / Blocks
+                  <small class="text-muted d-block">Enable if the building has named sections (Wing A, Block B…)</small>
+                </label>
+              </div>
+            </div>
+
+            <div id="wingsSection" class="d-none">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-semibold small">Wings / Blocks</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addWingRow()">
+                  <i class="ti tabler-plus me-1"></i>Add Wing
+                </button>
+              </div>
+              <div id="wingsList"></div>
+              <p class="text-muted small mt-2">
+                <i class="ti tabler-info-circle me-1"></i>
+                Wings will be created after saving the property. You can also manage them from the property actions menu.
+              </p>
+            </div>
+          </div>
+
+        </div><!-- /modal-body -->
+
+        <div class="modal-footer justify-content-between">
+          <button type="button" class="btn btn-outline-secondary" id="btnBack" onclick="prevStep()" style="display:none">
+            <i class="ti tabler-arrow-left me-1"></i>Back
+          </button>
+          <div class="ms-auto d-flex gap-2">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="btnNext" onclick="nextStep()">
+              Next <i class="ti tabler-arrow-right ms-1"></i>
+            </button>
+            <button type="submit" class="btn btn-success d-none" id="btnSave">
+              <span id="saveBtnText">Save Property</span>
+              <span id="saveBtnSpinner" class="spinner-border spinner-border-sm d-none ms-1"></span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Wings Management Modal ═══════════════════════════════════════════════ -->
+<div class="modal fade" id="wingsModal" tabindex="-1">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Manage Wings — <span id="wingsModalPropName"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex justify-content-end mb-3">
+          <button class="btn btn-sm btn-primary" onclick="openAddWing()">
+            <i class="ti tabler-plus me-1"></i>Add Wing
+          </button>
+        </div>
+        <div id="wingsMgmtList">
+          <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Wing Form Modal ══════════════════════════════════════════════════════ -->
+<div class="modal fade" id="wingFormModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="wingFormTitle">Add Wing</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="wingForm">
+        <div class="modal-body">
+          <div id="wingFormError" class="alert alert-danger d-none small"></div>
+          <div class="mb-3">
+            <label class="form-label">Wing Name *</label>
+            <input type="text" class="form-control" id="wingName" placeholder="e.g. Wing A, Block B" required/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <input type="text" class="form-control" id="wingDesc" placeholder="Optional"/>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <span id="wingFormSaveTxt">Save</span>
+            <span id="wingFormSpinner" class="spinner-border spinner-border-sm d-none ms-1"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+// ── Rwanda admin data ─────────────────────────────────────────────────────────
+const RW = {
+  "Kigali City":      { districts: ["Gasabo","Kicukiro","Nyarugenge"],
+    sectors: {
+      Gasabo:     ["Bumbogo","Gatsata","Gikomero","Gisozi","Jabana","Jali","Kacyiru","Kimihurura","Kimironko","Kinyinya","Ndera","Nduba","Remera","Rusororo","Rutunga"],
+      Kicukiro:   ["Gahanga","Gatenga","Gikondo","Kagarama","Kanombe","Kicukiro","Kigarama","Masaka","Niboye","Nyarugunga"],
+      Nyarugenge: ["Gitega","Kanyinya","Kigali","Kimisagara","Mageragere","Muhima","Nyakabanda","Nyamirambo","Nyarugenge","Rwezamenyo"]
+    }},
+  "Northern Province":{ districts: ["Burera","Gakenke","Gicumbi","Musanze","Rulindo"],
+    sectors: {
+      Musanze:["Busogo","Cyuve","Gacaca","Gashaki","Gataraga","Kimonyi","Kinigi","Muhoza","Muko","Musanze","Nkotsi","Nyange","Remera","Rwaza","Shingiro"]
+    }},
+  "Southern Province":{ districts: ["Gisagara","Huye","Kamonyi","Muhanga","Nyamagabe","Nyanza","Nyaruguru","Ruhango"], sectors:{}},
+  "Eastern Province": { districts: ["Bugesera","Gatsibo","Kayonza","Kirehe","Ngoma","Nyagatare","Rwamagana"], sectors:{}},
+  "Western Province": { districts: ["Karongi","Ngororero","Nyabihu","Nyamasheke","Rubavu","Rusizi","Rutsiro"], sectors:{}}
+};
+
+function onProvinceChange() {
+  const prov = document.getElementById('pProvince').value;
+  const dist = document.getElementById('pDistrict');
+  const sect = document.getElementById('pSector');
+  dist.innerHTML = '<option value="">Select District</option>';
+  sect.innerHTML = '<option value="">Select Sector</option>';
+  if (prov && RW[prov]) {
+    RW[prov].districts.forEach(d => {
+      dist.insertAdjacentHTML('beforeend', `<option>${d}</option>`);
+    });
+  }
+}
+
+function onDistrictChange() {
+  const prov = document.getElementById('pProvince').value;
+  const dist = document.getElementById('pDistrict').value;
+  const sect = document.getElementById('pSector');
+  sect.innerHTML = '<option value="">Select Sector</option>';
+  if (prov && dist && RW[prov] && RW[prov].sectors[dist]) {
+    RW[prov].sectors[dist].forEach(s => {
+      sect.insertAdjacentHTML('beforeend', `<option>${s}</option>`);
+    });
+  }
+}
+
+function onSectorChange() { /* future: load cells */ }
+
+// ── Modal state ───────────────────────────────────────────────────────────────
+let currentStep = 1, editId = null, selectedCategory = null;
+let page = 0, search = '';
+const modal    = new bootstrap.Modal(document.getElementById('propertyModal'));
+const wingsModal = new bootstrap.Modal(document.getElementById('wingsModal'));
+const wingFormModal = new bootstrap.Modal(document.getElementById('wingFormModal'));
+let wingsModalPropId = null, editWingId = null;
+
+function selectCategory(el) {
+  document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedCategory = el.dataset.cat;
+  // Auto-set landUse
+  const lu = document.getElementById('pLandUse');
+  if (selectedCategory === 'FULL_HOUSE' || selectedCategory === 'APARTMENT_BUILDING') lu.value = 'RESIDENTIAL';
+  else if (selectedCategory === 'COMPLEX') lu.value = 'MIXED';
+  updateStep1Details();
+}
+
+function updateStep1Details() {
+  const isFh = selectedCategory === 'FULL_HOUSE';
+  const isMu = selectedCategory === 'APARTMENT_BUILDING' || selectedCategory === 'COMPLEX';
+  document.getElementById('step1FhFields').classList.toggle('d-none', !isFh);
+  document.getElementById('step1MuInfo').classList.toggle('d-none', !isMu);
+  if (selectedCategory === 'COMPLEX') {
+    document.getElementById('step1MuHint').textContent =
+      'This Complex can have Residential, Shop, Office, and Restaurant units — all managed in the Units section.';
+  } else if (selectedCategory === 'APARTMENT_BUILDING') {
+    document.getElementById('step1MuHint').textContent =
+      'Units for this Apartment Building are all Residential — managed in the Units section.';
+  }
+}
+
+function showStep(n) {
+  [1,2,3].forEach(i => {
+    document.getElementById('step'+i).classList.toggle('d-none', i !== n);
+    const ind = document.getElementById('sInd'+i);
+    ind.classList.remove('active','done');
+    if (i < n) ind.classList.add('done');
+    else if (i === n) ind.classList.add('active');
+  });
+  document.getElementById('btnBack').style.display = n > 1 ? '' : 'none';
+  const isLast = (n === 3);
+  document.getElementById('btnNext').classList.toggle('d-none', isLast);
+  document.getElementById('btnSave').classList.toggle('d-none', !isLast);
+  currentStep = n;
+}
+
+function nextStep() {
+  if (currentStep === 1) {
+    if (!selectedCategory) { showError('Please select a property category.'); return; }
+  }
+  if (currentStep === 2) {
+    if (!document.getElementById('pName').value.trim()) { showError('Property name is required.'); return; }
+    if (!document.getElementById('pAddress').value.trim()) { showError('Street address is required.'); return; }
+    if (!document.getElementById('pProvince').value) { showError('Province is required.'); return; }
+    if (!document.getElementById('pDistrict').value) { showError('District is required.'); return; }
+  }
+  clearError();
+  if (currentStep < 3) showStep(currentStep + 1);
+}
+
+function prevStep() {
+  clearError();
+  if (currentStep > 1) showStep(currentStep - 1);
+}
+
+
+function onHasWingsChange() {
+  const has = document.getElementById('pHasWings').checked;
+  document.getElementById('wingsSection').classList.toggle('d-none', !has);
+}
+
+// Wings rows in step 4 (pending creation after save)
+const pendingWings = [];
+function addWingRow() {
+  const name = prompt('Wing / Block name (e.g. Wing A, Block B, East Wing):');
+  if (!name || !name.trim()) return;
+  pendingWings.push(name.trim());
+  renderPendingWings();
+}
+function renderPendingWings() {
+  const list = document.getElementById('wingsList');
+  if (pendingWings.length === 0) { list.innerHTML = ''; return; }
+  list.innerHTML = pendingWings.map((w,i) => `
+    <div class="d-flex align-items-center justify-content-between border rounded px-3 py-2 mb-2">
+      <span><i class="ti tabler-building-arch me-2 text-primary"></i>${w}</span>
+      <button type="button" class="btn btn-sm btn-icon btn-outline-danger" onclick="pendingWings.splice(${i},1);renderPendingWings()">
+        <i class="ti tabler-x"></i>
+      </button>
+    </div>`).join('');
+}
+
+function showError(msg) {
+  const el = document.getElementById('formError');
+  el.textContent = msg; el.classList.remove('d-none');
+}
+function clearError() {
+  document.getElementById('formError').classList.add('d-none');
+}
+
+function openCreate() {
+  editId = null; selectedCategory = null; pendingWings.length = 0;
+  document.getElementById('modalTitle').textContent = 'Add Property';
+  document.getElementById('propertyForm').reset();
+  document.querySelectorAll('.category-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('pLandUse').value = '';
+  document.getElementById('pDistrict').innerHTML = '<option value="">Select District</option>';
+  document.getElementById('pSector').innerHTML = '<option value="">Select Sector</option>';
+  renderPendingWings();
+  showStep(1);
+  modal.show();
+}
+
+function openEdit(prop) {
+  editId = prop.id;
+  selectedCategory = prop.category || null;
+  document.getElementById('modalTitle').textContent = 'Edit Property';
+  clearError();
+  pendingWings.length = 0;
+
+  // Pre-select category card
+  document.querySelectorAll('.category-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.cat === selectedCategory);
+  });
+  document.getElementById('pLandUse').value   = prop.landUse || '';
+  document.getElementById('pName').value      = prop.name || '';
+  document.getElementById('pUpi').value       = prop.upi || '';
+  document.getElementById('pAddress').value   = prop.address || '';
+  document.getElementById('pDesc').value      = prop.description || '';
+  document.getElementById('pCell').value      = prop.cell || '';
+  document.getElementById('pVillage').value   = prop.village || '';
+
+  // Chain province → district → sector
+  const provSel = document.getElementById('pProvince');
+  provSel.value = prop.province || '';
+  onProvinceChange();
+  document.getElementById('pDistrict').value = prop.district || '';
+  onDistrictChange();
+  document.getElementById('pSector').value = prop.sector || '';
+
+  // Full house
+  document.getElementById('pBedrooms').value  = prop.numBedrooms || '';
+  document.getElementById('pBathrooms').value = prop.numBathrooms || '';
+  document.getElementById('pParking').value   = prop.parkingSpaces || '';
+  document.getElementById('pHouseRent').value  = prop.houseRentAmount || '';
+  document.getElementById('pHouseArea').value  = prop.houseAreaSqm   || '';
+  document.getElementById('pTotalArea').value  = prop.totalAreaSqm   || '';
+
+  // Wings
+  document.getElementById('pHasWings').checked = !!prop.hasWings;
+  onHasWingsChange();
+  renderPendingWings();
+
+  updateStep1Details();
+  showStep(1);
+  modal.show();
+}
+
+document.getElementById('propertyForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('btnSave');
+  const spinner = document.getElementById('saveBtnSpinner');
+  btn.disabled = true; spinner.classList.remove('d-none');
+  clearError();
+
+  const body = {
+    category:       selectedCategory,
+    landUse:        document.getElementById('pLandUse').value || null,
+    name:           document.getElementById('pName').value.trim(),
+    upi:            document.getElementById('pUpi').value.trim() || null,
+    address:        document.getElementById('pAddress').value.trim(),
+    province:       document.getElementById('pProvince').value || null,
+    district:       document.getElementById('pDistrict').value || null,
+    sector:         document.getElementById('pSector').value || null,
+    cell:           document.getElementById('pCell').value.trim() || null,
+    village:        document.getElementById('pVillage').value.trim() || null,
+    description:    document.getElementById('pDesc').value.trim() || null,
+    hasWings:       document.getElementById('pHasWings').checked,
+    numBedrooms:    parseInt(document.getElementById('pBedrooms').value) || null,
+    numBathrooms:   parseInt(document.getElementById('pBathrooms').value) || null,
+    parkingSpaces:  parseInt(document.getElementById('pParking').value) || null,
+    houseRentAmount:parseFloat(document.getElementById('pHouseRent').value) || null,
+    houseAreaSqm:   parseFloat(document.getElementById('pHouseArea').value) || null,
+    totalAreaSqm:   parseFloat(document.getElementById('pTotalArea').value) || null,
+  };
+
+  const res = editId ? await API.updateProperty(editId, body) : await API.createProperty(body);
+  btn.disabled = false; spinner.classList.add('d-none');
+
+  if (res && res.ok) {
+    const newId = res.data.data ? res.data.data.id : editId;
+    // Create pending wings if any
+    if (pendingWings.length > 0 && newId) {
+      for (const wName of pendingWings) {
+        await request('POST', '/api/properties/wings', { propertyId: newId, name: wName });
+      }
+    }
+    modal.hide();
+    loadProperties();
+  } else {
+    showError((res && res.data && res.data.message) || 'Failed to save property.');
+  }
+});
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+const catBadge = { FULL_HOUSE:'bg-label-primary', APARTMENT_BUILDING:'bg-label-info', COMPLEX:'bg-label-warning' };
+const catLabel = { FULL_HOUSE:'Full House', APARTMENT_BUILDING:'Apartment', COMPLEX:'Complex' };
+
+async function loadProperties() {
+  const params = { page, size: 20 };
+  if (search) params.search = search;
+  const res = await API.getProperties(params);
+  if (!res || !res.ok) return;
+  const body = document.getElementById('propertiesBody');
+  const p = res.data.data;
+  if (!p || !p.content || p.content.length === 0) {
+    body.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No properties found</td></tr>';
+    document.getElementById('tableInfo').textContent = '0 results';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+  body.innerHTML = p.content.map((prop, i) => {
+    const cat = prop.category || '';
+    const loc = [prop.district, prop.province].filter(Boolean).join(', ') || prop.city || '–';
+    const floors = prop.floors != null ? prop.floors : (prop.category === 'FULL_HOUSE' ? '–' : '?');
+    return `
+    <tr>
+      <td>${page * 20 + i + 1}</td>
+      <td>
+        <strong>${prop.name}</strong>
+        ${prop.hasWings ? '<span class="badge bg-label-secondary ms-1 small">Wings</span>' : ''}
+        <br><small class="text-muted">${prop.upi ? 'UPI: '+prop.upi : ''}</small>
+      </td>
+      <td><span class="badge ${catBadge[cat]||'bg-label-secondary'}">${catLabel[cat]||cat||'Legacy'}</span></td>
+      <td><small>${loc}</small></td>
+      <td>
+        ${prop.category === 'FULL_HOUSE'
+          ? '<span class="text-muted small">Single unit</span>'
+          : `<span class="fw-semibold">${prop.totalUnits}</span>
+             <br><small class="text-success">${prop.occupiedUnits||0} occ.</small>
+             ${prop.totalAreaSqm ? `<small class="text-muted d-block" style="font-size:.65rem">${parseFloat(prop.totalAreaSqm).toLocaleString(undefined,{maximumFractionDigits:0})} m²/floor</small>` : ''}`}
+      </td>
+      <td><small>${floors !== '–' && floors != null ? floors + 'F' : '–'}</small></td>
+      <td>${prop.landlord ? prop.landlord.firstName+' '+prop.landlord.lastName : '–'}</td>
+      <td><span class="badge bg-label-${prop.isActive?'success':'danger'}">${prop.isActive?'Active':'Inactive'}</span></td>
+      <td>
+        <div class="d-flex gap-1 flex-wrap">
+          ${prop.category !== 'FULL_HOUSE' ? `
+          <a href="/html/units/list.html?propertyId=${prop.id}" class="btn btn-sm btn-icon btn-outline-primary" title="View Units">
+            <i class="ti tabler-door"></i>
+          </a>` : ''}
+          ${prop.hasWings ? `
+          <button class="btn btn-sm btn-icon btn-outline-secondary" onclick="openWingsModal(${prop.id},'${prop.name.replace(/'/g,"\\'")}')" title="Manage Wings">
+            <i class="ti tabler-building-arch"></i>
+          </button>` : ''}
+          <button class="btn btn-sm btn-icon btn-outline-warning" onclick="openEdit(${JSON.stringify(prop).replace(/"/g,'&quot;')})" title="Edit">
+            <i class="ti tabler-edit"></i>
+          </button>
+          <button class="btn btn-sm btn-icon btn-outline-danger" onclick="deleteProperty(${prop.id})" title="Delete">
+            <i class="ti tabler-trash"></i>
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tableInfo').textContent =
+    `Showing ${p.number * p.size + 1}–${Math.min((p.number+1)*p.size, p.totalElements)} of ${p.totalElements}`;
+  const pg = document.getElementById('pagination');
+  pg.innerHTML = Array.from({length: p.totalPages}, (_,i) =>
+    `<li class="page-item${i===p.number?' active':''}">
+       <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i+1}</a>
+     </li>`).join('');
+}
+
+function gotoPage(n) { page = n; loadProperties(); }
+document.getElementById('searchInput').addEventListener('input', function() {
+  search = this.value.trim(); page = 0; loadProperties();
+});
+
+async function deleteProperty(id) {
+  if (!confirm('Delete this property? All its units will be deactivated.')) return;
+  const res = await API.deleteProperty(id);
+  if (res && res.ok) loadProperties();
+  else alert('Failed to delete property.');
+}
+
+// ── Wings management modal ────────────────────────────────────────────────────
+async function openWingsModal(propId, propName) {
+  wingsModalPropId = propId;
+  editWingId = null;
+  document.getElementById('wingsModalPropName').textContent = propName;
+  wingsModal.show();
+  await loadWings();
+}
+
+async function loadWings() {
+  const list = document.getElementById('wingsMgmtList');
+  list.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>';
+  const res = await request('GET', `/api/properties/${wingsModalPropId}/wings`);
+  if (!res || !res.ok || !res.data.data || res.data.data.length === 0) {
+    list.innerHTML = '<p class="text-muted text-center py-3">No wings yet. Click Add Wing to create one.</p>';
+    return;
+  }
+  list.innerHTML = res.data.data.map(w => `
+    <div class="d-flex align-items-center justify-content-between border rounded px-3 py-2 mb-2">
+      <div>
+        <span class="fw-semibold"><i class="ti tabler-building-arch me-2 text-primary"></i>${w.name}</span>
+        <br><small class="text-muted">${w.description || ''} &nbsp; ${w.unitCount} unit(s)</small>
+      </div>
+      <div class="d-flex gap-1">
+        <button class="btn btn-sm btn-icon btn-outline-warning" onclick="openEditWing(${w.id},'${w.name.replace(/'/g,"\\'")}','${(w.description||'').replace(/'/g,"\\'")}')">
+          <i class="ti tabler-edit"></i>
+        </button>
+        <button class="btn btn-sm btn-icon btn-outline-danger" onclick="deleteWing(${w.id})">
+          <i class="ti tabler-trash"></i>
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function openAddWing() {
+  editWingId = null;
+  document.getElementById('wingFormTitle').textContent = 'Add Wing';
+  document.getElementById('wingForm').reset();
+  document.getElementById('wingFormError').classList.add('d-none');
+  wingFormModal.show();
+}
+
+function openEditWing(id, name, desc) {
+  editWingId = id;
+  document.getElementById('wingFormTitle').textContent = 'Edit Wing';
+  document.getElementById('wingName').value = name;
+  document.getElementById('wingDesc').value = desc;
+  document.getElementById('wingFormError').classList.add('d-none');
+  wingFormModal.show();
+}
+
+document.getElementById('wingForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const spinner = document.getElementById('wingFormSpinner');
+  spinner.classList.remove('d-none');
+  const body = {
+    propertyId: wingsModalPropId,
+    name: document.getElementById('wingName').value.trim(),
+    description: document.getElementById('wingDesc').value.trim() || null,
+  };
+  const res = editWingId
+    ? await request('PUT', `/api/properties/wings/${editWingId}`, body)
+    : await request('POST', '/api/properties/wings', body);
+  spinner.classList.add('d-none');
+  if (res && res.ok) {
+    wingFormModal.hide();
+    loadWings();
+    loadProperties();
+  } else {
+    const err = document.getElementById('wingFormError');
+    err.textContent = (res && res.data && res.data.message) || 'Failed to save wing.';
+    err.classList.remove('d-none');
+  }
+});
+
+async function deleteWing(wingId) {
+  if (!confirm('Delete this wing? Units in it will remain but lose their wing assignment.')) return;
+  const res = await request('DELETE', `/api/properties/wings/${wingId}`);
+  if (res && res.ok) loadWings();
+  else alert('Failed to delete wing.');
+}
+
+loadProperties();
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>

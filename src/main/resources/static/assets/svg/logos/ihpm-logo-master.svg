@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="680" height="900" viewBox="0 0 680 900" xmlns="http://www.w3.org/2000/svg" style="background:transparent">
+  <defs>
+    <linearGradient id="navyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0D2B55"/>
+      <stop offset="100%" stop-color="#122F5E"/>
+    </linearGradient>
+    <linearGradient id="greenGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2A9D5C"/>
+      <stop offset="100%" stop-color="#1E7E48"/>
+    </linearGradient>
+    <style>
+      .section-label { font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: 500; fill: #999999; letter-spacing: 0.12em; }
+      .wordmark-primary { font-family: Arial, Helvetica, sans-serif; font-weight: 700; fill: #0D2B55; letter-spacing: 0.04em; }
+      .wordmark-sub { font-family: Arial, Helvetica, sans-serif; font-weight: 400; fill: #4A6A8A; letter-spacing: 0.18em; }
+      .wordmark-primary-inv { font-family: Arial, Helvetica, sans-serif; font-weight: 700; fill: #FFFFFF; letter-spacing: 0.04em; }
+      .wordmark-sub-inv { font-family: Arial, Helvetica, sans-serif; font-weight: 400; fill: #A0C4E0; letter-spacing: 0.18em; }
+    </style>
+  </defs>
+
+  <!-- ========================================================== -->
+  <!-- SECTION 1: ICON ONLY -->
+  <!-- ========================================================== -->
+  <text class="section-label" x="40" y="36">ICON ONLY</text>
+
+  <rect x="280" y="50" width="120" height="120" rx="28" fill="url(#navyGrad)"/>
+  <!-- Roof -->
+  <polygon points="340,72 298,104 382,104" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linejoin="round"/>
+  <!-- Body -->
+  <rect x="308" y="104" width="64" height="44" rx="4" fill="none" stroke="#FFFFFF" stroke-width="2.4"/>
+  <!-- Door -->
+  <rect x="330" y="120" width="20" height="28" rx="3" fill="#2A9D5C"/>
+  <!-- Network nodes -->
+  <circle cx="298" cy="104" r="4" fill="#2A9D5C"/>
+  <circle cx="340" cy="72"  r="4" fill="#2A9D5C"/>
+  <circle cx="382" cy="104" r="4" fill="#2A9D5C"/>
+  <circle cx="340" cy="104" r="3" fill="#A0C4E0" opacity="0.8"/>
+  <!-- Shield badge -->
+  <rect x="359" y="137" width="30" height="26" rx="6" fill="#1E7E48"/>
+  <path d="M374,142 L368,146 L368,154 Q374,158 374,158 Q380,154 380,154 L380,146 Z" fill="#FFFFFF" opacity="0.95"/>
+  <path d="M370,151 L373,154 L378,148" fill="none" stroke="#1E7E48" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- ========================================================== -->
+  <!-- SECTION 2: HORIZONTAL — LIGHT -->
+  <!-- ========================================================== -->
+  <text class="section-label" x="40" y="222">HORIZONTAL — LIGHT</text>
+
+  <rect x="40" y="238" width="600" height="110" rx="16" fill="#F4F8FC"/>
+  <!-- Icon -->
+  <rect x="64" y="261" width="64" height="64" rx="16" fill="url(#navyGrad)"/>
+  <polygon points="96,270 75,285 117,285" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"/>
+  <rect x="81" y="285" width="30" height="22" rx="2.5" fill="none" stroke="#FFFFFF" stroke-width="1.8"/>
+  <rect x="89" y="294" width="10" height="13" rx="2" fill="#2A9D5C"/>
+  <circle cx="75"  cy="285" r="2.5" fill="#2A9D5C"/>
+  <circle cx="96"  cy="270" r="2.5" fill="#2A9D5C"/>
+  <circle cx="117" cy="285" r="2.5" fill="#2A9D5C"/>
+  <rect x="107" y="302" width="15" height="13" rx="3.5" fill="#1E7E48"/>
+  <path d="M114.5,304.5 L111,307 L111,311 Q114.5,313 114.5,313 Q118,311 118,311 L118,307 Z" fill="#FFFFFF" opacity="0.95"/>
+  <path d="M112,309.5 L114,311.5 L117,308" fill="none" stroke="#1E7E48" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Wordmark -->
+  <text class="wordmark-primary" x="148" y="297" font-size="28">INKOMANE</text>
+  <text class="wordmark-sub" x="149" y="318" font-size="10">HOUSE PROPERTY MANAGEMENT</text>
+  <rect x="148" y="325" width="390" height="1.5" rx="1" fill="#C8A84B" opacity="0.7"/>
+  <text x="149" y="340" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#4A6A8A" letter-spacing="0.06em">SMART GOVERNANCE · DIGITAL TRANSFORMATION</text>
+
+  <!-- ========================================================== -->
+  <!-- SECTION 3: HORIZONTAL — DARK -->
+  <!-- ========================================================== -->
+  <text class="section-label" x="40" y="402">HORIZONTAL — DARK</text>
+
+  <rect x="40" y="418" width="600" height="110" rx="16" fill="#0D2B55"/>
+  <!-- Icon -->
+  <rect x="64" y="441" width="64" height="64" rx="16" fill="#122F5E" stroke="#1E4A82" stroke-width="1.5"/>
+  <polygon points="96,450 75,465 117,465" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"/>
+  <rect x="81" y="465" width="30" height="22" rx="2.5" fill="none" stroke="#FFFFFF" stroke-width="1.8"/>
+  <rect x="89" y="474" width="10" height="13" rx="2" fill="#2A9D5C"/>
+  <circle cx="75"  cy="465" r="2.5" fill="#2A9D5C"/>
+  <circle cx="96"  cy="450" r="2.5" fill="#2A9D5C"/>
+  <circle cx="117" cy="465" r="2.5" fill="#2A9D5C"/>
+  <rect x="107" y="482" width="15" height="13" rx="3.5" fill="#1E7E48"/>
+  <path d="M114.5,484.5 L111,487 L111,491 Q114.5,493 114.5,493 Q118,491 118,491 L118,487 Z" fill="#FFFFFF" opacity="0.95"/>
+  <path d="M112,489.5 L114,491.5 L117,488" fill="none" stroke="#1E7E48" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Wordmark inverted -->
+  <text class="wordmark-primary-inv" x="148" y="477" font-size="28">INKOMANE</text>
+  <text class="wordmark-sub-inv"     x="149" y="498" font-size="10">HOUSE PROPERTY MANAGEMENT</text>
+  <rect x="148" y="505" width="390" height="1.5" rx="1" fill="#C8A84B" opacity="0.8"/>
+  <text x="149" y="520" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#7AABCC" letter-spacing="0.06em">SMART GOVERNANCE · DIGITAL TRANSFORMATION</text>
+
+  <!-- ========================================================== -->
+  <!-- SECTION 4: STACKED — CENTERED -->
+  <!-- ========================================================== -->
+  <text class="section-label" x="40" y="586">STACKED — CENTERED</text>
+
+  <rect x="180" y="602" width="320" height="270" rx="20" fill="#F4F8FC"/>
+  <!-- Large icon -->
+  <rect x="300" y="622" width="80" height="80" rx="20" fill="url(#navyGrad)"/>
+  <polygon points="340,634 318,650 362,650" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+  <rect x="324" y="650" width="32" height="24" rx="3" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+  <rect x="332" y="658" width="12" height="16" rx="2.5" fill="#2A9D5C"/>
+  <circle cx="318" cy="650" r="3" fill="#2A9D5C"/>
+  <circle cx="340" cy="634" r="3" fill="#2A9D5C"/>
+  <circle cx="362" cy="650" r="3" fill="#2A9D5C"/>
+  <circle cx="340" cy="650" r="2" fill="#A0C4E0" opacity="0.8"/>
+  <!-- Badge -->
+  <rect x="358" y="681" width="18" height="15" rx="4" fill="#1E7E48"/>
+  <path d="M367,683.5 L363.5,686 L363.5,691 Q367,693.5 367,693.5 Q370.5,691 370.5,691 L370.5,686 Z" fill="#FFFFFF" opacity="0.95"/>
+  <path d="M364.5,689 L366.5,691 L370,687" fill="none" stroke="#1E7E48" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Stacked wordmark -->
+  <text font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="26" fill="#0D2B55" letter-spacing="0.05em" x="340" y="734" text-anchor="middle">INKOMANE</text>
+  <line x1="220" y1="746" x2="460" y2="746" stroke="#C8A84B" stroke-width="1" opacity="0.6"/>
+  <text font-family="Arial, Helvetica, sans-serif" font-weight="400" font-size="9" fill="#4A6A8A" letter-spacing="0.2em" x="340" y="762" text-anchor="middle">HOUSE PROPERTY MANAGEMENT</text>
+  <text font-family="Arial, Helvetica, sans-serif" font-weight="400" font-size="9" fill="#7A9ABB" letter-spacing="0.08em" x="340" y="796" text-anchor="middle">SMART GOVERNANCE · DIGITAL TRANSFORMATION</text>
+
+  <!-- ========================================================== -->
+  <!-- COLOR PALETTE SWATCHES -->
+  <!-- ========================================================== -->
+  <text class="section-label" x="40" y="858">COLOR SYSTEM</text>
+  <rect x="40"  y="866" width="34" height="14" rx="3" fill="#0D2B55"/>
+  <text font-family="Arial, sans-serif" font-size="8" fill="#666" x="40"  y="890">#0D2B55</text>
+  <rect x="82"  y="866" width="34" height="14" rx="3" fill="#1E4A82"/>
+  <text font-family="Arial, sans-serif" font-size="8" fill="#666" x="82"  y="890">#1E4A82</text>
+  <rect x="124" y="866" width="34" height="14" rx="3" fill="#2A9D5C"/>
+  <text font-family="Arial, sans-serif" font-size="8" fill="#666" x="124" y="890">#2A9D5C</text>
+  <rect x="166" y="866" width="34" height="14" rx="3" fill="#1E7E48"/>
+  <text font-family="Arial, sans-serif" font-size="8" fill="#666" x="166" y="890">#1E7E48</text>
+  <rect x="208" y="866" width="34" height="14" rx="3" fill="#C8A84B"/>
+  <text font-family="Arial, sans-serif" font-size="8" fill="#666" x="208" y="890">#C8A84B</text>
+  <rect x="250" y="866" width="34" height="14" rx="3" fill="#A0C4E0"/>
+  <text font-family="Arial, sans-serif" font-size="8" fill="#666" x="250" y="890">#A0C4E0</text>
+  <rect x="292" y="866" width="34" height="14" rx="3" fill="#F4F8FC" stroke="#D0DCE8" stroke-width="1"/>
+  <text font-family="Arial, sans-serif" font-size="8" fill="#666" x="292" y="890">#F4F8FC</text>
+</svg>

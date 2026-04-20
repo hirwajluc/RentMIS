@@ -1,0 +1,967 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">Payments — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+  <style>
+    .receipt-thumb { max-width: 100%; max-height: 280px; border-radius: 6px; border: 1px solid #e0e0e0; }
+    #ebmScrollBody { position:absolute; top:-200px; bottom:-350px; left:0; right:0; overflow-y:auto; overflow-x:hidden; }
+    .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; max-height: 300px; overflow-y: auto; padding: 4px 2px; }
+    .month-tile { border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 9px 11px; cursor: pointer; transition: all .15s; user-select: none; position: relative; }
+    .month-tile:hover:not(.disabled) { border-color: #71dd37; background: #f4fff0; }
+    .month-tile.selected  { border-color: #71dd37; background: #ebffe8; }
+    .month-tile.paid      { border-color: #b0d4a0; background: #f0fff0; cursor: not-allowed; opacity: .7; }
+    .month-tile.pending-approval { border-color: #ffab00; background: #fffbf0; cursor: not-allowed; opacity: .85; }
+    .month-tile.future    { border-color: #ffd966; background: #fffdf0; }
+    .month-tile.future.selected { border-color: #f39c12; background: #fff3cd; }
+    .month-tile.disabled  { pointer-events: none; }
+    .month-tile .tile-month { font-size: .83rem; font-weight: 600; color: #333; }
+    .month-tile .tile-year  { font-size: .7rem; color: #888; }
+    .month-tile .tile-badge { position: absolute; top: 5px; right: 7px; font-size: .6rem; }
+    .summary-bar { background: #f0fff5; border: 1.5px solid #71dd37; border-radius: 8px; padding: 11px 15px;
+                   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .summary-bar .summary-count { font-size: .88rem; color: #555; }
+    .summary-bar .summary-total { font-size: 1.05rem; font-weight: 700; color: #2a9d5c; }
+    #cashUnitInfo { background: #f8f9fa; border-radius: 8px; padding: 10px 14px; font-size: .85rem; }
+  </style>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <div class="d-flex align-items-center justify-content-between mb-6">
+            <h4 class="mb-0">Payments</h4>
+          </div>
+
+          <!-- Tabs -->
+          <ul class="nav nav-tabs mb-4" id="payTabs">
+            <li class="nav-item">
+              <a class="nav-link active" href="#" onclick="showTab('pending'); return false;">
+                Pending Confirmation
+                <span class="badge bg-danger ms-1" id="pendingBadge" style="display:none">0</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" onclick="showTab('record'); return false;">Record Cash Payment</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#" onclick="showTab('all'); return false;">All Payments</a>
+            </li>
+          </ul>
+
+          <!-- ── Pending Confirmation tab ── -->
+          <div id="tabPending">
+            <div class="card">
+              <div class="card-header"><h5 class="card-title mb-0">Awaiting Your Confirmation</h5></div>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                  <thead>
+                    <tr>
+                      <th>Tenant</th><th>Unit</th><th>Period</th><th>Amount</th>
+                      <th>Method</th><th>Submitted</th><th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pendingBody">
+                    <tr><td colspan="7" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Record Cash tab ── -->
+          <div id="tabRecord" style="display:none">
+            <div class="row justify-content-center">
+              <div class="col-md-7 col-lg-6">
+                <div class="card">
+                  <div class="card-header"><h5 class="card-title mb-0">Record Cash Payment</h5></div>
+                  <div class="card-body">
+                    <div id="cashMsg" class="d-none mb-3"></div>
+
+                    <form id="cashForm" onsubmit="submitCash(event)">
+
+                      <!-- Step 1: Property -->
+                      <div class="mb-3">
+                        <label class="form-label fw-semibold">Property *</label>
+                        <select class="form-select" id="cashProperty" onchange="onPropertyChange()" required>
+                          <option value="">— Select property —</option>
+                        </select>
+                      </div>
+
+                      <!-- Step 2: Unit (populated after property chosen) -->
+                      <div class="mb-3" id="cashUnitRow" style="display:none">
+                        <label class="form-label fw-semibold">Unit *</label>
+                        <select class="form-select" id="cashUnit" onchange="onUnitChange()" required>
+                          <option value="">— Select unit —</option>
+                        </select>
+                        <div id="cashUnitInfo" class="mt-2 d-none">
+                          <span id="cashUnitTenant">–</span>
+                          &nbsp;·&nbsp;
+                          <span class="text-muted">Rent:</span>
+                          <strong id="cashUnitRent">–</strong>
+                        </div>
+                      </div>
+
+                      <!-- Step 3: Month grid (populated after unit chosen) -->
+                      <div id="cashMonthSection" style="display:none" class="mb-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                          <label class="form-label fw-semibold mb-0">Payment Period(s) *</label>
+                          <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2"
+                                    onclick="cashSelectUnpaid()">Select unpaid</button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2"
+                                    onclick="cashClearSelection()">Clear</button>
+                          </div>
+                        </div>
+                        <div class="month-grid" id="cashMonthGrid">
+                          <div class="text-muted small py-2 text-center">Loading…</div>
+                        </div>
+                      </div>
+
+                      <!-- Summary bar -->
+                      <div class="summary-bar mb-3" id="cashSummaryBar" style="display:none !important">
+                        <span class="summary-count" id="cashSummaryCount">0 months selected</span>
+                        <span class="summary-total" id="cashSummaryTotal">RWF 0</span>
+                      </div>
+
+                      <!-- Notes -->
+                      <div class="mb-3" id="cashNotesRow" style="display:none">
+                        <label class="form-label">Notes</label>
+                        <input type="text" class="form-control" id="cashNotes" placeholder="Optional…"/>
+                      </div>
+
+                      <!-- Password confirmation -->
+                      <div class="mb-4" id="cashPasswordRow" style="display:none">
+                        <label class="form-label">Your Password <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="cashPassword" placeholder="Enter your password to confirm"/>
+                        <div class="invalid-feedback" id="cashPasswordFeedback">Password is required.</div>
+                      </div>
+
+                      <button type="submit" class="btn btn-success w-100" id="cashBtn" disabled>
+                        <i class="ti tabler-cash me-2"></i>
+                        <span id="cashBtnText">Select unit and months</span>
+                        <span id="cashSpinner" class="spinner-border spinner-border-sm d-none ms-2"></span>
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── All Payments tab ── -->
+          <div id="tabAll" style="display:none">
+            <div class="card">
+              <div class="card-header d-flex align-items-center justify-content-between">
+                <h5 class="card-title mb-0">All Payments</h5>
+                <select class="form-select form-select-sm w-auto" id="filterStatus" onchange="loadAll()">
+                  <option value="">All Statuses</option>
+                  <option value="COMPLETED">Completed</option>
+                  <option value="PENDING_CONFIRMATION">Pending Confirmation</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="FAILED">Failed</option>
+                </select>
+              </div>
+              <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                  <thead>
+                    <tr><th>Reference</th><th>Tenant</th><th>Unit</th><th>Period</th>
+                        <th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>EBM Receipt</th></tr>
+                  </thead>
+                  <tbody id="allBody">
+                    <tr><td colspan="9" class="text-center py-3 text-muted">Switch to this tab to load</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Bank Deposit Slip</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center" id="receiptModalBody">
+        <div class="spinner-border text-primary"></div>
+      </div>
+      <div class="modal-footer">
+        <a id="receiptDownloadLink" href="#" target="_blank" class="btn btn-outline-primary btn-sm">
+          <i class="ti tabler-external-link me-1"></i>Open in new tab
+        </a>
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm / Reject Modal -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmModalTitle">Confirm Payment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmModalBody" class="mb-3"></p>
+        <div class="mb-3" id="confirmPasswordWrap">
+          <label class="form-label mb-1">Your Password <span class="text-danger">*</span></label>
+          <input type="password" class="form-control" id="confirmPassword" placeholder="Enter your password to confirm"/>
+          <div class="invalid-feedback" id="confirmPasswordFeedback">Password is required.</div>
+        </div>
+        <div class="mb-2">
+          <label class="form-label mb-1" id="confirmNoteLabel">Note (optional)</label>
+          <input type="text" class="form-control" id="confirmNote" placeholder="Add a note…"/>
+          <div class="invalid-feedback">Please enter a reason for rejection.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-sm" id="confirmModalBtn" onclick="executeConfirmAction()">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EBM Viewer Modal -->
+<div class="modal fade" id="ebmViewerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px;width:96vw">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-primary text-white py-2">
+        <h6 class="modal-title mb-0"><i class="ti tabler-receipt me-2"></i>EBM Receipt <span id="ebmModalRef" class="fw-bold"></span></h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0" style="height:70vh;overflow:hidden;position:relative;background:#fff">
+        <div id="ebmLoading" style="position:absolute;inset:0;background:#fff;z-index:10;display:flex;align-items:center;justify-content:center">
+          <div class="text-center text-muted">
+            <div class="spinner-border mb-3 text-primary"></div>
+            <div>Loading EBM receipt…</div>
+            <small class="text-muted d-block mt-1">This may take a few seconds</small>
+          </div>
+        </div>
+        <div id="ebmScrollBody">
+          <iframe id="ebmIframe" src="about:blank" scrolling="no" style="width:440px;height:1600px;border:none;display:block"></iframe>
+        </div>
+      </div>
+      <div class="modal-footer py-2 gap-2 justify-content-between">
+        <button class="btn btn-sm btn-success" onclick="downloadEBMPdf()">
+          <i class="ti tabler-file-download me-1"></i>Download PDF
+        </button>
+        <div class="d-flex gap-2">
+          <a id="ebmOpenLink" href="#" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="ti tabler-external-link me-1"></i>Open in Tab
+          </a>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+<script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+'use strict';
+const MONTH_NAMES  = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+const MONTH_SHORT  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const STATUS_COLOR = {
+  COMPLETED:'success', PENDING:'warning', PROCESSING:'info',
+  PENDING_CONFIRMATION:'primary', FAILED:'danger', CANCELLED:'secondary'
+};
+const METHOD_ICON  = {};
+
+let confirmAction = null;
+
+// ── Tab switching ────────────────────────────────────────────────────────────
+function showTab(tab) {
+  ['tabPending','tabRecord','tabAll'].forEach(id =>
+    document.getElementById(id).style.display = 'none');
+  document.querySelectorAll('#payTabs .nav-link').forEach((el, i) =>
+    el.classList.toggle('active', ['pending','record','all'][i] === tab));
+  document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = '';
+  if (tab === 'pending') loadPending();
+  if (tab === 'all') loadAll();
+}
+
+// ── Pending confirmations ────────────────────────────────────────────────────
+async function loadPending() {
+  const res  = await API.getPendingConfirmations();
+  const body = document.getElementById('pendingBody');
+  if (!res?.ok || !res.data.data?.length) {
+    body.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No payments awaiting confirmation</td></tr>';
+    document.getElementById('pendingBadge').style.display = 'none';
+    return;
+  }
+  const payments = res.data.data;
+  const badge    = document.getElementById('pendingBadge');
+  badge.textContent = payments.length; badge.style.display = '';
+
+  body.innerHTML = payments.map(p => {
+    const tenantName = p.tenant ? p.tenant.firstName + ' ' + p.tenant.lastName : '–';
+    const unitLabel  = p.unit   ? (p.unit.unitNumber || ('Unit ' + p.unit.id)) : '–';
+    const period     = p.paymentPeriodMonth
+      ? MONTH_SHORT[p.paymentPeriodMonth - 1] + ' ' + p.paymentPeriodYear : '–';
+    const icon       = '';
+    const receiptBtn = p.receiptFilePath
+      ? `<button class="btn btn-xs btn-outline-secondary py-0 px-2"
+           onclick="viewReceipt(${p.id},'${escHtml(p.receiptOriginalName||'receipt')}')">
+           <i class="ti tabler-file-text me-1"></i>Receipt
+         </button>`
+      : (p.paymentMethod === 'CASH' ? '<span class="text-muted small">Cash</span>' : '');
+    return `<tr>
+      <td>${escHtml(tenantName)}</td>
+      <td>${escHtml(unitLabel)}</td>
+      <td>${period}</td>
+      <td>RWF ${(p.totalAmount||0).toLocaleString()}</td>
+      <td>${icon} ${fmtMethod(p.paymentMethod)}</td>
+      <td class="text-muted small">${p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '–'}</td>
+      <td>
+        <div class="d-flex gap-1 flex-wrap">
+          ${receiptBtn}
+          <button class="btn btn-xs btn-success py-0 px-2"
+                  onclick="openConfirm('confirm',${p.id},'${escHtml(tenantName)}','${period}')">
+            <i class="ti tabler-check"></i> Confirm
+          </button>
+          <button class="btn btn-xs btn-danger py-0 px-2"
+                  onclick="openConfirm('reject',${p.id},'${escHtml(tenantName)}','${period}')">
+            <i class="ti tabler-x"></i> Reject
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Method label helper ───────────────────────────────────────────────────────
+function fmtMethod(m) {
+  if (!m) return '–';
+  if (m === 'BANK_TRANSFER') return 'Bank Deposit';
+  return m.replace(/_/g, ' ');
+}
+
+// ── Receipt preview ──────────────────────────────────────────────────────────
+async function viewReceipt(paymentId, fileName) {
+  const modal = new bootstrap.Modal(document.getElementById('receiptModal'));
+  const body  = document.getElementById('receiptModalBody');
+  const link  = document.getElementById('receiptDownloadLink');
+  body.innerHTML = '<div class="spinner-border text-primary"></div>';
+  modal.show();
+
+  // Fetch with auth header (endpoint requires JWT)
+  try {
+    const res = await fetch(`/api/payments/${paymentId}/receipt-file`, {
+      headers: { 'Authorization': 'Bearer ' + Auth.getToken() }
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const ext = (fileName ? fileName.split('.').pop() : (blob.type.split('/')[1]||'')).toLowerCase();
+
+    // Set download link to blob URL
+    link.href = objectUrl;
+    link.download = fileName || 'bank-deposit-slip';
+
+    if (['jpg','jpeg','png','gif','webp'].includes(ext)) {
+      body.innerHTML = `<img src="${objectUrl}" class="receipt-thumb"/>`;
+    } else if (ext === 'pdf' || blob.type === 'application/pdf') {
+      body.innerHTML = `<iframe src="${objectUrl}" style="width:100%;height:420px;border:none;border-radius:6px"></iframe>`;
+    } else {
+      body.innerHTML = `<p class="text-muted mb-3">Preview not available for this file type (${ext}).</p>`;
+      link.textContent = 'Download file';
+    }
+  } catch (err) {
+    body.innerHTML = `<p class="text-danger">Could not load receipt: ${err.message}</p>`;
+  }
+}
+
+// ── Confirm / Reject modal ───────────────────────────────────────────────────
+function openConfirm(type, paymentId, tenantName, period) {
+  confirmAction = { type, paymentId };
+  const isConfirm = type === 'confirm';
+  document.getElementById('confirmModalTitle').textContent =
+    isConfirm ? 'Confirm Payment' : 'Reject Payment';
+  document.getElementById('confirmModalBody').textContent = isConfirm
+    ? `Confirm that ${tenantName} paid rent for ${period}? This will mark the payment as COMPLETED.`
+    : `Reject the payment from ${tenantName} for ${period}? This marks it FAILED.`;
+  document.getElementById('confirmNoteLabel').textContent =
+    isConfirm ? 'Note to tenant (optional)' : 'Reason for rejection *';
+  const btn = document.getElementById('confirmModalBtn');
+  btn.textContent = isConfirm ? 'Confirm' : 'Reject';
+  btn.className   = 'btn btn-sm ' + (isConfirm ? 'btn-success' : 'btn-danger');
+  document.getElementById('confirmNote').value = '';
+  document.getElementById('confirmNote').classList.remove('is-invalid');
+  // Password field only on confirm
+  document.getElementById('confirmPasswordWrap').style.display = isConfirm ? '' : 'none';
+  document.getElementById('confirmPassword').value = '';
+  document.getElementById('confirmPassword').classList.remove('is-invalid');
+  new bootstrap.Modal(document.getElementById('confirmModal')).show();
+}
+
+async function executeConfirmAction() {
+  if (!confirmAction) return;
+  const note     = document.getElementById('confirmNote').value.trim();
+  const password = document.getElementById('confirmPassword').value;
+  const isConfirm = confirmAction.type === 'confirm';
+
+  // Validate password on confirm
+  if (isConfirm && !password) {
+    document.getElementById('confirmPassword').classList.add('is-invalid');
+    document.getElementById('confirmPasswordFeedback').textContent = 'Password is required.';
+    return;
+  }
+  document.getElementById('confirmPassword').classList.remove('is-invalid');
+
+  if (!isConfirm && !note) {
+    document.getElementById('confirmNote').classList.add('is-invalid');
+    return;
+  }
+  document.getElementById('confirmNote').classList.remove('is-invalid');
+
+  const res = isConfirm
+    ? await API.confirmPayment(confirmAction.paymentId, note || null, password)
+    : await API.rejectPayment(confirmAction.paymentId, note);
+
+  if (res?.ok) {
+    bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+    pendingLoaded = false;
+    loadPending();
+  } else {
+    const msg = res?.data?.message || 'Action failed. Please try again.';
+    if (isConfirm && (res?.status === 403 || msg.toLowerCase().includes('password'))) {
+      document.getElementById('confirmPassword').classList.add('is-invalid');
+      document.getElementById('confirmPasswordFeedback').textContent = msg;
+    } else {
+      bootstrap.Modal.getInstance(document.getElementById('confirmModal')).hide();
+      alert(msg);
+    }
+  }
+}
+
+// ── All payments ─────────────────────────────────────────────────────────────
+async function loadAll() {
+  const status = document.getElementById('filterStatus').value;
+  const params = { size: 50 };
+  if (status) params.status = status;
+  const res  = await API.getPayments(params);
+  const body = document.getElementById('allBody');
+  if (!res?.ok || !res.data.data?.content?.length) {
+    body.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-3">No payments found</td></tr>';
+    return;
+  }
+  body.innerHTML = res.data.data.content.map(p => {
+    const tenant = p.tenant ? p.tenant.firstName + ' ' + p.tenant.lastName : '–';
+    const unit   = p.unit   ? (p.unit.unitNumber || 'Unit ' + p.unit.id) : '–';
+    const period = p.paymentPeriodMonth
+      ? MONTH_SHORT[p.paymentPeriodMonth - 1] + ' ' + p.paymentPeriodYear : '–';
+    const date   = p.paidAt ? new Date(p.paidAt).toLocaleDateString()
+                 : p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '–';
+
+    const inv = p.invoice;
+    const vc  = inv && (
+      inv.ebmVerificationCode || inv.qrCode ||
+      (inv.verificationUrl && inv.verificationUrl.includes('/ebm/')
+        ? inv.verificationUrl.split('/ebm/').pop() : null)
+    );
+    let ebmCell;
+    if (vc) {
+      ebmCell = `<button class="btn btn-primary d-inline-flex align-items-center gap-1" onclick="openEBMViewer('${vc}','${inv.ebmInvoiceNumber||''}')">
+        <i class="ti tabler-receipt fs-4"></i><span>View EBM</span></button>`;
+    } else if (inv) {
+      ebmCell = `<button class="btn btn-sm btn-outline-warning" onclick="generateEbm(${inv.id}, this)">
+        <i class="ti tabler-refresh me-1"></i>Generate EBM</button>`;
+    } else if (p.status === 'COMPLETED') {
+      ebmCell = `<button class="btn btn-sm btn-outline-secondary" onclick="createAndGenerateEbm(${p.id}, this)">
+        <i class="ti tabler-file-plus me-1"></i>Generate EBM</button>`;
+    } else {
+      ebmCell = '–';
+    }
+
+    return `<tr>
+      <td><code class="small">${escHtml(p.referenceNumber)}</code></td>
+      <td>${escHtml(tenant)}</td><td>${escHtml(unit)}</td><td>${period}</td>
+      <td>RWF ${(p.totalAmount||0).toLocaleString()}</td>
+      <td>${fmtMethod(p.paymentMethod)}</td>
+      <td><span class="badge bg-label-${STATUS_COLOR[p.status]||'secondary'}">${(p.status||'').replace(/_/g,' ')}</span></td>
+      <td class="text-muted small">${date}</td>
+      <td>${ebmCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── EBM Viewer ───────────────────────────────────────────────────────────────
+let _ebmCurrentVC = null;
+
+function openEBMViewer(vc, ref) {
+  _ebmCurrentVC = vc;
+  document.getElementById('ebmModalRef').textContent = ref ? '#' + ref : '';
+  document.getElementById('ebmOpenLink').href = vc ? `https://qa.inkomane.rw/ebm/${vc}` : '#';
+
+  const iframe  = document.getElementById('ebmIframe');
+  const loading = document.getElementById('ebmLoading');
+  loading.style.display = 'flex';
+  loading.innerHTML = `<div class="text-center text-muted">
+    <div class="spinner-border mb-3 text-primary"></div>
+    <div>Loading EBM receipt…</div>
+    <small class="text-muted d-block mt-1">This may take a few seconds</small>
+  </div>`;
+  iframe.src = 'about:blank';
+  new bootstrap.Modal(document.getElementById('ebmViewerModal')).show();
+
+  if (!vc) {
+    loading.innerHTML = '<div class="text-danger py-4 text-center">No EBM code available.</div>';
+    return;
+  }
+  iframe.onload = function () {
+    if (iframe.src === 'about:blank') return;
+    setTimeout(() => { loading.style.display = 'none'; }, 3000);
+  };
+  iframe.src = `https://qa.inkomane.rw/ebm/${vc}`;
+}
+
+function downloadEBMPdf() {
+  if (_ebmCurrentVC) window.open(`https://qa.inkomane.rw/ebm/${_ebmCurrentVC}`, '_blank');
+}
+
+async function generateEbm(invoiceId, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating…';
+  const res = await API.generateEbm(invoiceId);
+  if (res?.ok && res.data?.data) {
+    const inv = res.data.data;
+    const vc  = inv.ebmVerificationCode || inv.qrCode ||
+      (inv.verificationUrl && inv.verificationUrl.includes('/ebm/')
+        ? inv.verificationUrl.split('/ebm/').pop() : null);
+    if (vc) { openEBMViewer(vc, inv.ebmInvoiceNumber); loadAll(); return; }
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti tabler-refresh me-1"></i>Generate EBM';
+  showToast((res?.data?.message) || 'EBM generation failed. Please try again.', 'danger');
+}
+
+// Create invoice record then submit to EBM — for payments that have no invoice yet
+async function createAndGenerateEbm(paymentId, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creating…';
+
+  const createRes = await API.createInvoice(paymentId);
+  if (!createRes?.ok) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti tabler-file-plus me-1"></i>Generate EBM';
+    showToast(createRes?.data?.message || 'Failed to create invoice.', 'danger');
+    return;
+  }
+
+  const invoiceId = createRes.data.data?.id;
+  if (!invoiceId) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti tabler-file-plus me-1"></i>Generate EBM';
+    showToast('Invoice created but ID missing.', 'danger');
+    return;
+  }
+
+  // Replace button with the generate flow
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Submitting…';
+  const res = await API.generateEbm(invoiceId);
+  if (res?.ok && res.data.data) {
+    const inv = res.data.data;
+    const vc  = inv.ebmVerificationCode || inv.qrCode ||
+      (inv.verificationUrl && inv.verificationUrl.includes('/ebm/')
+        ? inv.verificationUrl.split('/ebm/').pop() : null);
+    if (vc) { openEBMViewer(vc, inv.ebmInvoiceNumber); loadAll(); return; }
+    showToast('EBM submitted but no verification code returned yet.', 'warning');
+    loadAll();
+    return;
+  }
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti tabler-file-plus me-1"></i>Generate EBM';
+  showToast(res?.data?.message || 'EBM generation failed.', 'danger');
+}
+
+function showToast(message, type) {
+  let c = document.getElementById('toastContainer');
+  if (!c) {
+    c = document.createElement('div');
+    c.id = 'toastContainer';
+    c.style.cssText = 'position:fixed;top:80px;right:20px;z-index:9999;min-width:300px;max-width:420px';
+    document.body.appendChild(c);
+  }
+  const id = 'toast_' + Date.now();
+  c.insertAdjacentHTML('beforeend', `
+    <div id="${id}" class="toast align-items-center text-bg-${type} border-0 show mb-2" role="alert">
+      <div class="d-flex">
+        <div class="toast-body small">${message}</div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                onclick="document.getElementById('${id}').remove()"></button>
+      </div>
+    </div>`);
+  setTimeout(() => { document.getElementById(id)?.remove(); }, 7000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Record Cash — chained selects + month grid
+// ═══════════════════════════════════════════════════════════════════════════
+let cashUnitData    = null;   // currently selected unit object
+let cashPaid        = new Set();  // 'YYYY-M' COMPLETED/PENDING/PROCESSING
+let cashPending     = new Set();  // 'YYYY-M' PENDING_CONFIRMATION (awaiting approval)
+let cashSelected    = new Set();  // 'YYYY-M' selected for cash recording
+let cashMonthlyRent = 0;
+let cashContractStart = null;  // Date | null
+let cashContractEnd   = null;  // Date | null
+
+// Load properties into dropdown on page load
+(async () => {
+  const res = await API.getProperties({ size: 200 });
+  const sel = document.getElementById('cashProperty');
+  if (res?.ok && res.data.data?.content?.length) {
+    res.data.data.content.forEach(prop => {
+      const opt = document.createElement('option');
+      opt.value = prop.id;
+      opt.textContent = prop.name || ('Property ' + prop.id);
+      sel.appendChild(opt);
+    });
+  } else {
+    const opt = document.createElement('option');
+    opt.textContent = 'No properties found'; opt.disabled = true;
+    sel.appendChild(opt);
+  }
+
+  // Load pending badge
+  const pending = await API.getPendingConfirmations();
+  if (pending?.ok && pending.data.data?.length) {
+    const badge = document.getElementById('pendingBadge');
+    badge.textContent = pending.data.data.length;
+    badge.style.display = '';
+  }
+
+  loadPending();
+})();
+
+async function onPropertyChange() {
+  const propId = document.getElementById('cashProperty').value;
+  const unitSel = document.getElementById('cashUnit');
+  unitSel.innerHTML = '<option value="">— Select unit —</option>';
+  cashUnitData = null;
+  document.getElementById('cashUnitRow').style.display = propId ? '' : 'none';
+  document.getElementById('cashMonthSection').style.display = 'none';
+  document.getElementById('cashSummaryBar').style.setProperty('display','none','important');
+  document.getElementById('cashNotesRow').style.display = 'none';
+  document.getElementById('cashPasswordRow').style.display = 'none';
+  document.getElementById('cashUnitInfo').classList.add('d-none');
+  cashPaid.clear(); cashPending.clear(); cashSelected.clear(); updateCashSummary();
+
+  if (!propId) return;
+
+  const res = await API.getUnits({ propertyId: propId, size: 100 });
+  if (res?.ok && res.data.data?.content?.length) {
+    const occupied = res.data.data.content.filter(u => u.currentTenant);
+    if (occupied.length === 0) {
+      const opt = document.createElement('option');
+      opt.textContent = 'No occupied units'; opt.disabled = true;
+      unitSel.appendChild(opt);
+      return;
+    }
+    occupied.forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.id;
+      const tenantName = u.currentTenant.firstName + ' ' + u.currentTenant.lastName;
+      opt.textContent  = (u.unitNumber || 'Unit ' + u.id) + ' — ' + tenantName;
+      opt.dataset.rent   = u.rentAmount || 0;
+      opt.dataset.tenant = tenantName;
+      unitSel.appendChild(opt);
+    });
+    document.getElementById('cashUnitRow').style.display = '';
+  }
+}
+
+async function onUnitChange() {
+  const unitSel = document.getElementById('cashUnit');
+  const unitId  = unitSel.value;
+  cashUnitData      = null;
+  cashContractStart = null;
+  cashContractEnd   = null;
+  cashPaid.clear(); cashPending.clear(); cashSelected.clear();
+  document.getElementById('cashMonthSection').style.display = 'none';
+  document.getElementById('cashSummaryBar').style.setProperty('display','none','important');
+  document.getElementById('cashNotesRow').style.display = 'none';
+  document.getElementById('cashPasswordRow').style.display = 'none';
+  document.getElementById('cashPassword').value = '';
+  document.getElementById('cashPassword').classList.remove('is-invalid');
+  document.getElementById('cashUnitInfo').classList.add('d-none');
+  updateCashSummary();
+
+  if (!unitId) return;
+
+  const opt = unitSel.options[unitSel.selectedIndex];
+  cashMonthlyRent = parseFloat(opt.dataset.rent) || 0;
+  const tenantName = opt.dataset.tenant || '–';
+
+  // Show unit info strip
+  document.getElementById('cashUnitTenant').textContent = tenantName;
+  document.getElementById('cashUnitRent').textContent   = 'RWF ' + cashMonthlyRent.toLocaleString();
+  document.getElementById('cashUnitInfo').classList.remove('d-none');
+
+  // Fetch active contract for this unit and existing payments in parallel
+  const [contRes, payRes] = await Promise.all([
+    API.getContracts({ status: 'ACTIVE', size: 100 }),
+    API.getPayments({ unitId: parseInt(unitId), size: 200 }),
+  ]);
+
+  // Find the contract whose unit.id matches
+  if (contRes?.ok && contRes.data.data?.content?.length) {
+    const contract = contRes.data.data.content.find(
+      c => c.unit && String(c.unit.id) === String(unitId)
+    );
+    if (contract) {
+      if (contract.startDate)  cashContractStart = new Date(contract.startDate);
+      if (contract.endDate)    cashContractEnd   = new Date(contract.endDate);
+      // Authoritative monthly rent from contract
+      if (parseFloat(contract.monthlyRent) > 0) {
+        cashMonthlyRent = parseFloat(contract.monthlyRent);
+        document.getElementById('cashUnitRent').textContent = 'RWF ' + cashMonthlyRent.toLocaleString();
+      }
+    }
+  }
+
+  // Mark already-paid / pending-approval periods
+  if (payRes?.ok && payRes.data.data?.content) {
+    payRes.data.data.content.forEach(p => {
+      if (!p.paymentPeriodMonth || !p.paymentPeriodYear) return;
+      const key = p.paymentPeriodYear + '-' + p.paymentPeriodMonth;
+      if (['COMPLETED','PENDING','PROCESSING'].includes(p.status)) {
+        cashPaid.add(key);
+      } else if (p.status === 'PENDING_CONFIRMATION') {
+        cashPending.add(key);
+      }
+    });
+  }
+
+  buildCashMonthGrid();
+  document.getElementById('cashMonthSection').style.display = '';
+  document.getElementById('cashNotesRow').style.display = '';
+  document.getElementById('cashPasswordRow').style.display = '';
+}
+
+function buildCashMonthGrid() {
+  const now  = new Date();
+  const nowY = now.getFullYear(), nowM = now.getMonth() + 1;
+
+  // Range start: contract start date, or 12 months ago as fallback
+  const minDate = cashContractStart || new Date(nowY - 1, nowM - 1, 1);
+  const minY = minDate.getFullYear(), minM = minDate.getMonth() + 1;
+
+  // Range end: max(contract end, now + 3 months) — same logic as tenant side
+  const defaultCeil = new Date(nowY, nowM + 2, 1);  // 3 months from now
+  const futureCeil  = cashContractEnd
+    ? new Date(Math.max(cashContractEnd.getTime(), defaultCeil.getTime()))
+    : defaultCeil;
+  const maxY = futureCeil.getFullYear(), maxM = futureCeil.getMonth() + 1;
+
+  const grid = document.getElementById('cashMonthGrid');
+  grid.innerHTML = '';
+  cashSelected.clear();
+
+  for (let y = minY; y <= maxY; y++) {
+    const mStart = (y === minY) ? minM : 1;
+    const mEnd   = (y === maxY) ? maxM : 12;
+    for (let m = mStart; m <= mEnd; m++) {
+      const key        = y + '-' + m;
+      const isPaid     = cashPaid.has(key);
+      const isPending  = cashPending.has(key);
+      const isFuture   = (y > nowY) || (y === nowY && m > nowM);
+      const isBlocked  = isPaid || isPending;
+
+      const tile = document.createElement('div');
+      tile.className = 'month-tile'
+        + (isPaid    ? ' paid disabled'             : '')
+        + (isPending ? ' pending-approval disabled' : '')
+        + (isFuture && !isBlocked ? ' future'       : '');
+      tile.dataset.key = key;
+      tile.innerHTML = `
+        <div class="tile-month">${MONTH_NAMES[m - 1]}</div>
+        <div class="tile-year">${y}</div>
+        ${isPaid    ? '<span class="tile-badge badge bg-label-success">&#10003; Paid</span>' : ''}
+        ${isPending ? '<span class="tile-badge badge bg-label-warning" style="font-size:.58rem">Pending Approval</span>' : ''}
+        ${isFuture && !isBlocked ? '<span class="tile-badge badge bg-label-warning" style="font-size:.58rem">Advance</span>' : ''}
+      `;
+      if (!isBlocked) {
+        tile.addEventListener('click', () => cashToggleMonth(key, tile));
+        if (y === nowY && m === nowM) cashToggleMonth(key, tile); // pre-select current month
+      }
+      grid.appendChild(tile);
+    }
+  }
+  updateCashSummary();
+}
+
+function cashToggleMonth(key, tile) {
+  if (cashSelected.has(key)) {
+    cashSelected.delete(key); tile.classList.remove('selected');
+  } else {
+    cashSelected.add(key); tile.classList.add('selected');
+  }
+  updateCashSummary();
+}
+
+function cashSelectUnpaid() {
+  document.querySelectorAll('#cashMonthGrid .month-tile:not(.disabled)').forEach(tile => {
+    const key = tile.dataset.key;
+    if (!cashSelected.has(key)) { cashSelected.add(key); tile.classList.add('selected'); }
+  });
+  updateCashSummary();
+}
+
+function cashClearSelection() {
+  cashSelected.clear();
+  document.querySelectorAll('#cashMonthGrid .month-tile.selected').forEach(t => t.classList.remove('selected'));
+  updateCashSummary();
+}
+
+function updateCashSummary() {
+  const count = cashSelected.size;
+  const total = count * cashMonthlyRent;
+  const bar   = document.getElementById('cashSummaryBar');
+  const btn   = document.getElementById('cashBtn');
+  const txt   = document.getElementById('cashBtnText');
+
+  if (count === 0) {
+    bar.style.setProperty('display','none','important');
+    btn.disabled = true;
+    txt.textContent = cashUnitData !== null || document.getElementById('cashUnit').value
+      ? 'Select at least one month'
+      : 'Select unit and months';
+  } else {
+    bar.style.removeProperty('display');
+    document.getElementById('cashSummaryCount').textContent =
+      count + ' month' + (count > 1 ? 's' : '') + ' selected';
+    document.getElementById('cashSummaryTotal').textContent =
+      'RWF ' + total.toLocaleString();
+    btn.disabled = false;
+    txt.textContent = `Record ${count} month${count > 1 ? 's' : ''} — RWF ${total.toLocaleString()}`;
+  }
+}
+
+async function submitCash(e) {
+  e.preventDefault();
+  const unitId = document.getElementById('cashUnit').value;
+  if (!unitId) { showCashMsg('danger', 'Please select a unit.'); return; }
+  if (cashSelected.size === 0) { showCashMsg('danger', 'Please select at least one month.'); return; }
+
+  const password = document.getElementById('cashPassword').value;
+  if (!password) {
+    document.getElementById('cashPassword').classList.add('is-invalid');
+    document.getElementById('cashPasswordFeedback').textContent = 'Password is required.';
+    document.getElementById('cashPassword').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    return;
+  }
+  document.getElementById('cashPassword').classList.remove('is-invalid');
+
+  const sp  = document.getElementById('cashSpinner');
+  const btn = document.getElementById('cashBtn');
+  sp.classList.remove('d-none'); btn.disabled = true;
+
+  const periods = [...cashSelected].map(key => {
+    const [y, m] = key.split('-');
+    return { year: parseInt(y), month: parseInt(m) };
+  });
+
+  const res = await API.recordCashPayment({
+    unitId:        parseInt(unitId),
+    periods,
+    amountPerMonth: cashMonthlyRent,
+    notes:         document.getElementById('cashNotes').value || null,
+    password,
+  });
+
+  sp.classList.add('d-none'); btn.disabled = false;
+
+  if (res?.ok && res.data.data) {
+    const count = Array.isArray(res.data.data) ? res.data.data.length : 1;
+    showCashMsg('success',
+      `${count} cash payment${count > 1 ? 's' : ''} recorded successfully!`);
+    // Mark tiles as paid
+    periods.forEach(p => {
+      const key  = p.year + '-' + p.month;
+      cashPaid.add(key);
+      const tile = document.querySelector(`#cashMonthGrid .month-tile[data-key="${key}"]`);
+      if (tile) {
+        tile.classList.add('paid','disabled');
+        tile.classList.remove('selected','future');
+        tile.innerHTML = `
+          <div class="tile-month">${MONTH_NAMES[p.month-1]}</div>
+          <div class="tile-year">${p.year}</div>
+          <span class="tile-badge badge bg-label-success">✓ Paid</span>`;
+      }
+    });
+    cashSelected.clear();
+    updateCashSummary();
+    document.getElementById('cashNotes').value = '';
+    document.getElementById('cashPassword').value = '';
+  } else {
+    const msg = res?.data?.message || 'Failed to record payment.';
+    if (res?.status === 403 || msg.toLowerCase().includes('password')) {
+      document.getElementById('cashPassword').classList.add('is-invalid');
+      document.getElementById('cashPasswordFeedback').textContent = msg;
+      document.getElementById('cashPassword').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } else {
+      showCashMsg('danger', msg);
+    }
+  }
+}
+
+function showCashMsg(type, msg) {
+  const el = document.getElementById('cashMsg');
+  el.className = 'alert alert-' + type;
+  el.textContent = msg;
+  el.classList.remove('d-none');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">My Units — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+          <h4 class="mb-6">My Units</h4>
+
+          <div id="noUnit" class="d-none">
+            <div class="card"><div class="card-body text-center py-5">
+              <i class="ti tabler-home-off fs-1 text-muted mb-3 d-block"></i>
+              <p class="text-muted mb-0">No unit is currently assigned to your account.</p>
+            </div></div>
+          </div>
+
+          <div id="loadingUnits" class="text-center py-5">
+            <div class="spinner-border text-primary"></div>
+          </div>
+
+          <!-- Unit cards rendered dynamically -->
+          <div id="unitsContainer" class="row g-4"></div>
+
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+(async () => {
+  const loading = document.getElementById('loadingUnits');
+  const container = document.getElementById('unitsContainer');
+
+  // Load all active contracts to get all units
+  const contRes = await API.getContracts({ status: 'ACTIVE', size: 50 });
+  loading.style.display = 'none';
+
+  if (!contRes?.ok || !contRes.data.data?.content?.length) {
+    document.getElementById('noUnit').classList.remove('d-none');
+    return;
+  }
+
+  const contracts = contRes.data.data.content;
+  container.innerHTML = contracts.map(c => buildUnitCard(c)).join('');
+})();
+
+function buildUnitCard(contract) {
+  const u = contract.unit || {};
+  const rent    = parseFloat(contract.monthlyRent) || parseFloat(u.rentAmount) || 0;
+  const deposit = parseFloat(u.depositAmount) || 0;
+
+  const amenitiesHtml = u.amenities
+    ? u.amenities.split(',').map(a => a.trim()).filter(Boolean)
+        .map(a => `<span class="badge bg-label-primary me-1 mb-1">${a}</span>`).join('')
+    : '<span class="text-muted small">–</span>';
+
+  const statusColor = u.status === 'OCCUPIED' ? 'success' : 'secondary';
+
+  return `
+  <div class="col-md-6 col-lg-4">
+    <div class="card h-100">
+      <div class="card-header d-flex align-items-center gap-2">
+        <div class="avatar avatar-sm">
+          <span class="avatar-initial rounded-3 bg-label-primary"><i class="ti tabler-door"></i></span>
+        </div>
+        <div class="flex-grow-1">
+          <h5 class="mb-0">${u.unitNumber || '–'}</h5>
+          <small class="text-muted">${u.propertyName || '–'}</small>
+        </div>
+        <span class="badge bg-label-${statusColor}">${u.status || 'OCCUPIED'}</span>
+      </div>
+      <div class="card-body">
+        <div class="text-center mb-3 pb-3 border-bottom">
+          <h3 class="text-primary mb-0">RWF ${rent.toLocaleString()}</h3>
+          <small class="text-muted">Monthly Rent</small>
+        </div>
+        <table class="table table-sm table-borderless mb-3">
+          <tbody>
+            <tr><td class="text-muted" style="width:45%">Floor</td>
+                <td>${u.floorNumber != null ? u.floorNumber : '–'}</td></tr>
+            <tr><td class="text-muted">Bedrooms</td>
+                <td>${u.numBedrooms  != null ? u.numBedrooms  : '–'}</td></tr>
+            <tr><td class="text-muted">Bathrooms</td>
+                <td>${u.numBathrooms != null ? u.numBathrooms : '–'}</td></tr>
+            <tr><td class="text-muted">Area (m²)</td>
+                <td>${u.areaSqm != null ? u.areaSqm + ' m²' : '–'}</td></tr>
+            <tr><td class="text-muted">Deposit</td>
+                <td>${deposit > 0 ? 'RWF ' + deposit.toLocaleString() : '–'}</td></tr>
+            <tr><td class="text-muted">Type</td>
+                <td>${u.unitType || '–'}</td></tr>
+            <tr><td class="text-muted">Contract</td>
+                <td><span class="small text-muted">${contract.contractNumber || '–'}</span></td></tr>
+          </tbody>
+        </table>
+        ${u.amenities ? `<div class="mb-3">${amenitiesHtml}</div>` : ''}
+        <a href="/html/tenant/payments.html" class="btn btn-primary w-100">
+          <i class="ti tabler-credit-card me-2"></i>Pay Rent
+        </a>
+      </div>
+    </div>
+  </div>`;
+}
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>

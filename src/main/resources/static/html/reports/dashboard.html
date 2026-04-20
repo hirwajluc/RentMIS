@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Reports &amp; Analytics — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/apex-charts/apex-charts.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+  <style>
+    .report-section { margin-bottom: 2rem; }
+    .kpi-card { border-left: 4px solid; border-radius: 8px; padding: 1rem 1.25rem; }
+    .kpi-value { font-size: 1.35rem; font-weight: 700; line-height: 1.2; }
+    .kpi-label { font-size: 0.75rem; color: #8592a3; margin-top: 2px; }
+    .section-heading {
+      font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+      color: #566a7f; border-bottom: 2px solid #246691; padding-bottom: 6px; margin-bottom: 1rem;
+    }
+    .bar-cell { position: relative; height: 8px; border-radius: 4px; background: #f0f1f7; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 4px; transition: width .6s ease; }
+    .rank-badge { width: 26px; height: 26px; border-radius: 50%; display: inline-flex;
+                  align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+    .pdf-btn { position: fixed; bottom: 28px; right: 28px; z-index: 999; border-radius: 50px;
+               box-shadow: 0 4px 18px rgba(105,108,255,.45); padding: 10px 22px; }
+  </style>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <!-- Page header -->
+          <div class="d-flex align-items-center justify-content-between mb-6">
+            <div>
+              <h4 class="mb-1">Reports &amp; Analytics</h4>
+              <p class="text-muted mb-0" id="reportPeriod">Loading...</p>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-secondary btn-sm" onclick="exportCSV()">
+                <i class="ti tabler-table-export me-1"></i>Export CSV
+              </button>
+              <button class="btn btn-primary btn-sm" onclick="downloadPdf()" id="pdfBtn">
+                <i class="ti tabler-file-type-pdf me-1"></i>Download PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- Loading spinner -->
+          <div id="loadingState" class="text-center py-5">
+            <div class="spinner-border text-primary" style="width:3rem;height:3rem"></div>
+            <p class="text-muted mt-3">Building your report...</p>
+          </div>
+
+          <!-- Report body (hidden until data loads) -->
+          <div id="reportBody" style="display:none">
+
+            <!-- ── Section 1: Financial KPIs ───────────────────────────────── -->
+            <div class="report-section">
+              <p class="section-heading"><i class="ti tabler-cash me-2"></i>Financial Summary</p>
+              <div class="row g-4 mb-4">
+                <div class="col-sm-6 col-xl-3">
+                  <div class="card kpi-card h-100" style="border-color:#246691">
+                    <div class="kpi-value text-primary" id="k-totalRev">–</div>
+                    <div class="kpi-label">Total Revenue (All Time)</div>
+                  </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                  <div class="card kpi-card h-100" style="border-color:#71dd37">
+                    <div class="kpi-value text-success" id="k-annualRev">–</div>
+                    <div class="kpi-label">Annual Revenue (This Year)</div>
+                  </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                  <div class="card kpi-card h-100" style="border-color:#03c3ec">
+                    <div class="kpi-value text-info" id="k-monthRev">–</div>
+                    <div class="kpi-label">Monthly Revenue (This Month)</div>
+                  </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                  <div class="card kpi-card h-100" style="border-color:#8592a3">
+                    <div class="kpi-value" id="k-avgPay">–</div>
+                    <div class="kpi-label">Avg. Completed Payment</div>
+                  </div>
+                </div>
+              </div>
+              <div class="row g-4">
+                <div class="col-sm-4">
+                  <div class="card kpi-card h-100" style="border-color:#71dd37">
+                    <div class="kpi-value text-success" id="k-completed">–</div>
+                    <div class="kpi-label">Completed Payments</div>
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <div class="card kpi-card h-100" style="border-color:#ffab00">
+                    <div class="kpi-value text-warning" id="k-pending">–</div>
+                    <div class="kpi-label">Pending Payments</div>
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <div class="card kpi-card h-100" style="border-color:#ff3e1d">
+                    <div class="kpi-value text-danger" id="k-failed">–</div>
+                    <div class="kpi-label">Failed Payments</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Section 2: Charts ───────────────────────────────────────── -->
+            <div class="report-section">
+              <p class="section-heading"><i class="ti tabler-chart-bar me-2"></i>Visual Analytics</p>
+              <div class="row g-4 mb-4">
+                <div class="col-xl-8">
+                  <div class="card h-100">
+                    <div class="card-header pb-0">
+                      <h5 class="card-title mb-0">Monthly Revenue Trend</h5>
+                      <p class="text-muted small mb-0">Revenue collected per month (last 12 months)</p>
+                    </div>
+                    <div class="card-body pt-2">
+                      <div id="chartRevTrend" style="min-height:280px"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-xl-4">
+                  <div class="card h-100">
+                    <div class="card-header pb-0">
+                      <h5 class="card-title mb-0">Payment Status</h5>
+                      <p class="text-muted small mb-0">Completed vs Pending vs Failed</p>
+                    </div>
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center pt-2">
+                      <div id="chartPayStatus"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="row g-4">
+                <div class="col-md-6 col-xl-4">
+                  <div class="card h-100">
+                    <div class="card-header pb-0">
+                      <h5 class="card-title mb-0">Unit Occupancy</h5>
+                    </div>
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center pt-2">
+                      <div id="chartOccupancy"></div>
+                      <div class="text-center mt-1">
+                        <h4 id="occPct" class="mb-0 fw-bold">–%</h4>
+                        <p class="text-muted small">Occupancy Rate</p>
+                        <div class="d-flex gap-3 justify-content-center">
+                          <small><span style="color:#71dd37">●</span> <span id="occOcc">–</span> Occupied</small>
+                          <small><span style="color:#a8aab7">●</span> <span id="occAvail">–</span> Available</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6 col-xl-4">
+                  <div class="card h-100">
+                    <div class="card-header pb-0">
+                      <h5 class="card-title mb-0">Contract Status</h5>
+                    </div>
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center pt-2">
+                      <div id="chartContracts"></div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-12 col-xl-4">
+                  <div class="card h-100">
+                    <div class="card-header pb-0">
+                      <h5 class="card-title mb-0">EBM Invoice Status</h5>
+                    </div>
+                    <div class="card-body d-flex flex-column align-items-center justify-content-center pt-2">
+                      <div id="chartEbm"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Section 3: Monthly breakdown table ─────────────────────── -->
+            <div class="report-section">
+              <p class="section-heading"><i class="ti tabler-calendar-stats me-2"></i>Monthly Revenue Breakdown</p>
+              <div class="card">
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                      <tr><th>Month</th><th class="text-end">Revenue (RWF)</th><th class="text-center">Payments</th><th style="width:35%">Bar</th></tr>
+                    </thead>
+                    <tbody id="tblMonthly"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Section 4: Portfolio & Contracts side by side ──────────── -->
+            <div class="report-section">
+              <div class="row g-4">
+                <div class="col-md-6">
+                  <p class="section-heading"><i class="ti tabler-building-community me-2"></i>Portfolio Overview</p>
+                  <div class="card">
+                    <div class="table-responsive">
+                      <table class="table table-sm mb-0">
+                        <tbody id="tblPortfolio"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <p class="section-heading"><i class="ti tabler-file-certificate me-2"></i>Contract Status</p>
+                  <div class="card">
+                    <div class="table-responsive">
+                      <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Status</th><th class="text-end">Count</th><th>Share</th></tr></thead>
+                        <tbody id="tblContracts"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Section 5: Top payers + Payment methods ────────────────── -->
+            <div class="report-section">
+              <div class="row g-4">
+                <div class="col-md-7">
+                  <p class="section-heading"><i class="ti tabler-medal me-2"></i>Top Payers (by Total Paid)</p>
+                  <div class="card">
+                    <div class="table-responsive">
+                      <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>#</th><th>Tenant</th><th class="text-center">Payments</th><th class="text-end">Total Paid (RWF)</th></tr></thead>
+                        <tbody id="tblTopPayers"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-5">
+                  <p class="section-heading"><i class="ti tabler-credit-card me-2"></i>Payment Methods</p>
+                  <div class="card">
+                    <div class="table-responsive">
+                      <table class="table table-sm mb-0">
+                        <thead class="table-light"><tr><th>Method</th><th class="text-center">Count</th><th class="text-end">Total (RWF)</th></tr></thead>
+                        <tbody id="tblMethods"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ── Section 6: EBM table ───────────────────────────────────── -->
+            <div class="report-section">
+              <p class="section-heading"><i class="ti tabler-receipt me-2"></i>Invoice &amp; EBM Status</p>
+              <div class="row g-4">
+                <div class="col-sm-3">
+                  <div class="card kpi-card h-100" style="border-color:#8592a3">
+                    <div class="kpi-value" id="k-totalInv">–</div>
+                    <div class="kpi-label">Total Invoices</div>
+                  </div>
+                </div>
+                <div class="col-sm-3">
+                  <div class="card kpi-card h-100" style="border-color:#71dd37">
+                    <div class="kpi-value text-success" id="k-ebmOk">–</div>
+                    <div class="kpi-label">EBM Success</div>
+                  </div>
+                </div>
+                <div class="col-sm-3">
+                  <div class="card kpi-card h-100" style="border-color:#ffab00">
+                    <div class="kpi-value text-warning" id="k-ebmPend">–</div>
+                    <div class="kpi-label">EBM Pending</div>
+                  </div>
+                </div>
+                <div class="col-sm-3">
+                  <div class="card kpi-card h-100" style="border-color:#ff3e1d">
+                    <div class="kpi-value text-danger" id="k-ebmFail">–</div>
+                    <div class="kpi-label">EBM Failed</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /reportBody -->
+        </div><!-- /container -->
+
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">
+                Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.
+              </p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- Floating PDF button -->
+<button class="btn btn-primary pdf-btn d-none d-xl-flex align-items-center gap-2" onclick="downloadPdf()">
+  <i class="ti tabler-file-type-pdf" style="font-size:18px"></i>
+  <span>Download PDF Report</span>
+</button>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/vendor/libs/apex-charts/apexcharts.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+document.querySelectorAll('.footer-year').forEach(el => el.textContent = new Date().getFullYear());
+
+const fmt  = n => 'RWF ' + Number(n || 0).toLocaleString();
+const fmtK = v => { const n = Number(v||0); return n >= 1000000 ? 'RWF '+(n/1000000).toFixed(1)+'M' : n >= 1000 ? 'RWF '+(n/1000).toFixed(0)+'K' : 'RWF '+n; };
+
+let reportData = null;
+
+async function loadReport() {
+  try {
+    const res = await fetch('/api/reports/summary', {
+      headers: { 'Authorization': 'Bearer ' + Auth.getToken() }
+    });
+    if (!res.ok) throw new Error('Failed to load report');
+    const json = await res.json();
+    reportData = json.data;
+    renderReport(reportData);
+  } catch (e) {
+    document.getElementById('loadingState').innerHTML =
+      `<div class="alert alert-danger">Failed to load report data: ${e.message}</div>`;
+  }
+}
+
+function renderReport(d) {
+  document.getElementById('loadingState').style.display = 'none';
+  document.getElementById('reportBody').style.display   = 'block';
+  document.getElementById('reportPeriod').textContent   = d.period || '';
+
+  // ── KPIs ────────────────────────────────────────────────────────────────────
+  document.getElementById('k-totalRev').textContent  = fmt(d.totalRevenue);
+  document.getElementById('k-annualRev').textContent = fmt(d.annualRevenue);
+  document.getElementById('k-monthRev').textContent  = fmt(d.monthlyRevenue);
+  document.getElementById('k-avgPay').textContent    = fmt(d.avgPaymentAmount);
+  document.getElementById('k-completed').textContent = (d.completedPayments || 0).toLocaleString();
+  document.getElementById('k-pending').textContent   = (d.pendingPayments || 0).toLocaleString();
+  document.getElementById('k-failed').textContent    = (d.failedPayments || 0).toLocaleString();
+  document.getElementById('k-totalInv').textContent  = (d.totalInvoices || 0).toLocaleString();
+  document.getElementById('k-ebmOk').textContent     = (d.ebmSuccess || 0).toLocaleString();
+  document.getElementById('k-ebmPend').textContent   = (d.ebmPending || 0).toLocaleString();
+  document.getElementById('k-ebmFail').textContent   = (d.ebmFailed || 0).toLocaleString();
+
+  // Occupancy
+  document.getElementById('occPct').textContent   = (d.occupancyRate || 0) + '%';
+  document.getElementById('occOcc').textContent   = d.occupiedUnits || 0;
+  document.getElementById('occAvail').textContent = d.availableUnits || 0;
+
+  // ── Revenue Trend Chart ──────────────────────────────────────────────────────
+  const trend = d.monthlyTrend || [];
+  if (trend.length) {
+    new ApexCharts(document.getElementById('chartRevTrend'), {
+      chart: { type: 'area', height: 280, toolbar: { show: false }, zoom: { enabled: false } },
+      series: [
+        { name: 'Revenue (RWF)', data: trend.map(m => Number(m.revenue || 0)) },
+        { name: 'Payments', data: trend.map(m => Number(m.count || 0)), type: 'line' }
+      ],
+      xaxis: { categories: trend.map(m => m.label), labels: { rotate: -30, style: { fontSize: '11px' } },
+               axisBorder: { show: false }, axisTicks: { show: false } },
+      yaxis: [
+        { labels: { formatter: v => fmtK(v), style: { fontSize: '11px' } } },
+        { opposite: true, labels: { formatter: v => v + ' pay', style: { fontSize: '10px', colors: ['#ffab00'] } } }
+      ],
+      colors: ['#246691', '#ffab00'],
+      fill: { type: ['gradient', 'solid'], gradient: { shadeIntensity: 0.6, opacityFrom: 0.5, opacityTo: 0.05 } },
+      stroke: { curve: 'smooth', width: [2.5, 2] },
+      dataLabels: { enabled: false },
+      grid: { borderColor: '#f0f0f0', strokeDashArray: 4, xaxis: { lines: { show: false } } },
+      markers: { size: [3, 4], strokeColors: '#fff', strokeWidth: 2 },
+      tooltip: { y: { formatter: (v, {seriesIndex}) => seriesIndex === 0 ? fmt(v) : v + ' payments' } },
+      legend: { position: 'top' }
+    }).render();
+  } else {
+    document.getElementById('chartRevTrend').innerHTML =
+      '<div class="d-flex align-items-center justify-content-center" style="height:280px"><p class="text-muted">No data yet</p></div>';
+  }
+
+  // ── Payment Status Donut ─────────────────────────────────────────────────────
+  const comp = Number(d.completedPayments || 0), pend = Number(d.pendingPayments || 0), fail = Number(d.failedPayments || 0);
+  new ApexCharts(document.getElementById('chartPayStatus'), {
+    chart: { type: 'donut', height: 220 },
+    series: comp + pend + fail > 0 ? [comp, pend, fail] : [1, 0, 0],
+    labels: ['Completed', 'Pending', 'Failed'],
+    colors: ['#71dd37', '#ffab00', '#ff3e1d'],
+    legend: { position: 'bottom', fontSize: '12px' },
+    dataLabels: { enabled: true, formatter: (v, {seriesIndex, w}) => w.globals.series[seriesIndex] },
+    plotOptions: { pie: { donut: { size: '65%' } } }
+  }).render();
+
+  // ── Occupancy Donut ──────────────────────────────────────────────────────────
+  const occ = Number(d.occupiedUnits || 0), avail = Number(d.availableUnits || 0);
+  new ApexCharts(document.getElementById('chartOccupancy'), {
+    chart: { type: 'donut', height: 180 },
+    series: occ + avail > 0 ? [occ, avail] : [1, 0],
+    labels: ['Occupied', 'Available'],
+    colors: ['#71dd37', '#a8aab7'],
+    legend: { show: false }, dataLabels: { enabled: false },
+    plotOptions: { pie: { donut: { size: '72%', labels: {
+      show: true,
+      total: { show: true, label: 'Total', formatter: () => (occ + avail) + ' units', fontSize: '13px', color: '#697a8d' }
+    }}}}
+  }).render();
+
+  // ── Contract Status Donut ─────────────────────────────────────────────────────
+  new ApexCharts(document.getElementById('chartContracts'), {
+    chart: { type: 'donut', height: 220 },
+    series: [Number(d.activeContracts||0), Number(d.pendingSignatureContracts||0), Number(d.expiredContracts||0), Number(d.terminatedContracts||0)],
+    labels: ['Active', 'Pending Sign', 'Expired', 'Terminated'],
+    colors: ['#71dd37', '#ffab00', '#a8aab7', '#ff3e1d'],
+    legend: { position: 'bottom', fontSize: '11px' },
+    dataLabels: { enabled: true, formatter: (v, {seriesIndex, w}) => w.globals.series[seriesIndex] },
+    plotOptions: { pie: { donut: { size: '65%' } } }
+  }).render();
+
+  // ── EBM Status Donut ──────────────────────────────────────────────────────────
+  new ApexCharts(document.getElementById('chartEbm'), {
+    chart: { type: 'donut', height: 220 },
+    series: [Number(d.ebmSuccess||0), Number(d.ebmPending||0), Number(d.ebmFailed||0)],
+    labels: ['Success', 'Pending', 'Failed'],
+    colors: ['#71dd37', '#ffab00', '#ff3e1d'],
+    legend: { position: 'bottom', fontSize: '11px' },
+    dataLabels: { enabled: true, formatter: (v, {seriesIndex, w}) => w.globals.series[seriesIndex] },
+    plotOptions: { pie: { donut: { size: '65%' } } }
+  }).render();
+
+  // ── Monthly breakdown table ───────────────────────────────────────────────────
+  const maxRev = Math.max(...(trend.map(m => Number(m.revenue || 0))), 1);
+  document.getElementById('tblMonthly').innerHTML = trend.length
+    ? trend.map(m => {
+        const pct = Math.round(Number(m.revenue || 0) / maxRev * 100);
+        return `<tr>
+          <td class="fw-semibold">${m.label}</td>
+          <td class="text-end">${fmt(m.revenue)}</td>
+          <td class="text-center"><span class="badge bg-label-primary">${m.count || 0}</span></td>
+          <td><div class="bar-cell"><div class="bar-fill bg-primary" style="width:${pct}%"></div></div></td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>';
+
+  // ── Portfolio table ────────────────────────────────────────────────────────────
+  const portfolio = [
+    ['Properties', d.totalProperties || 0, 'ti-building-community', 'primary'],
+    ['Total Units', d.totalUnits || 0, 'ti-door', 'success'],
+    ['Occupied Units', d.occupiedUnits || 0, 'ti-door-enter', 'success'],
+    ['Available Units', d.availableUnits || 0, 'ti-door-exit', 'secondary'],
+    ['Active Tenants', d.totalTenants || 0, 'ti-users', 'warning'],
+    ['Active Contracts', d.activeContracts || 0, 'ti-file-certificate', 'info'],
+  ];
+  if (d.totalLandlords) portfolio.push(['Landlords', d.totalLandlords, 'ti-user-check', 'info']);
+  document.getElementById('tblPortfolio').innerHTML = portfolio.map(([label, val, icon, color]) => `
+    <tr>
+      <td><i class="ti ${icon} me-2 text-${color}"></i>${label}</td>
+      <td class="text-end fw-bold">${Number(val).toLocaleString()}</td>
+    </tr>`).join('');
+
+  // ── Contract status table ──────────────────────────────────────────────────────
+  const totalC = Number(d.totalContracts || 1);
+  const cRows = [
+    ['Active',            d.activeContracts,           'success'],
+    ['Pending Signature', d.pendingSignatureContracts,  'warning'],
+    ['Expired',           d.expiredContracts,           'secondary'],
+    ['Terminated',        d.terminatedContracts,        'danger'],
+  ];
+  document.getElementById('tblContracts').innerHTML = cRows.map(([label, count, color]) => {
+    const pct = Math.round(Number(count || 0) / totalC * 100);
+    return `<tr>
+      <td><span class="badge bg-label-${color} me-1">●</span>${label}</td>
+      <td class="text-end fw-bold">${Number(count||0).toLocaleString()}</td>
+      <td style="width:40%"><div class="bar-cell"><div class="bar-fill bg-${color}" style="width:${pct}%"></div></div>
+        <small class="text-muted">${pct}%</small></td>
+    </tr>`;
+  }).join('');
+
+  // ── Top payers table ───────────────────────────────────────────────────────────
+  const rankColors = ['#ffab00', '#697a8d', '#cd7f32', '#a8aab7', '#a8aab7'];
+  document.getElementById('tblTopPayers').innerHTML = (d.topPayers || []).length
+    ? (d.topPayers || []).map((p, i) => `
+        <tr>
+          <td><span class="rank-badge" style="background:${rankColors[i]||'#f0f1f7'};color:${i < 3 ? '#fff' : '#566a7f'}">${i+1}</span></td>
+          <td class="fw-semibold">${p.tenantName}</td>
+          <td class="text-center"><span class="badge bg-label-info">${p.paymentCount}</span></td>
+          <td class="text-end">${fmt(p.totalPaid)}</td>
+        </tr>`).join('')
+    : '<tr><td colspan="4" class="text-center text-muted py-3">No data</td></tr>';
+
+  // ── Payment methods table ──────────────────────────────────────────────────────
+  document.getElementById('tblMethods').innerHTML = (d.paymentMethods || []).length
+    ? (d.paymentMethods || []).map(m => `
+        <tr>
+          <td><i class="ti tabler-credit-card me-2 text-primary"></i>${m.method}</td>
+          <td class="text-center"><span class="badge bg-label-primary">${m.count}</span></td>
+          <td class="text-end">${fmt(m.total)}</td>
+        </tr>`).join('')
+    : '<tr><td colspan="3" class="text-center text-muted py-3">No data</td></tr>';
+}
+
+async function downloadPdf() {
+  const btn = document.getElementById('pdfBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Generating PDF...';
+  try {
+    const res = await fetch('/api/reports/pdf', {
+      headers: { 'Authorization': 'Bearer ' + Auth.getToken() }
+    });
+    if (!res.ok) throw new Error('Server error');
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'RentMIS-Report-' + new Date().toISOString().slice(0, 10) + '.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert('PDF generation failed: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti tabler-file-type-pdf me-1"></i>Download PDF';
+  }
+}
+
+function exportCSV() {
+  if (!reportData || !reportData.monthlyTrend) return;
+  const rows = [['Month', 'Revenue (RWF)', 'Payments']].concat(
+    reportData.monthlyTrend.map(m => [m.label, Number(m.revenue||0), m.count||0])
+  );
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'RentMIS-Report-' + new Date().toISOString().slice(0, 10) + '.csv';
+  a.click();
+}
+
+loadReport();
+</script>
+</body>
+</html>

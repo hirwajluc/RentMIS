@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contract Verification — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <style>
+    body { background: #f4f5fb; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 40px 16px; }
+    .verify-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 32px rgba(13,43,85,.10); max-width: 640px; width: 100%; padding: 40px 36px; }
+    .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    .brand-name { font-size: 22px; font-weight: 700; color: #0d2b55; letter-spacing: .02em; }
+    .brand-sub  { font-size: 10px; color: #8c99b3; letter-spacing: .12em; text-transform: uppercase; }
+    .result-box { border-radius: 10px; padding: 24px; margin-top: 28px; display: none; }
+    .result-box.valid    { background: #f0faf5; border: 1.5px solid #2a9d5c; }
+    .result-box.partial  { background: #fffbf0; border: 1.5px solid #f59e0b; }
+    .result-box.pending  { background: #f0f4ff; border: 1.5px solid #6c8ebf; }
+    .result-box.tampered { background: #fff4f4; border: 1.5px solid #dc3545; }
+    .result-box.error    { background: #fff4f4; border: 1.5px solid #dc3545; }
+    .status-badge { display: inline-flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+    .detail-row { display: flex; gap: 8px; font-size: 13px; padding: 5px 0; border-bottom: 1px solid rgba(0,0,0,.05); }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label { color: #8c99b3; min-width: 170px; flex-shrink: 0; }
+    .detail-val   { font-weight: 500; color: #212b3b; word-break: break-all; }
+    .hash-mono    { font-family: 'Courier New', monospace; font-size: 11px; color: #0d2b55; word-break: break-all; }
+    .check-icon   { color: #2a9d5c; }
+    .cross-icon   { color: #dc3545; }
+    .warn-icon    { color: #f59e0b; }
+    @media (max-width: 500px) { .verify-card { padding: 24px 16px; } }
+  </style>
+</head>
+<body>
+  <div class="verify-card">
+    <!-- Brand header -->
+    <div class="brand">
+      <svg width="40" height="40" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg">
+        <rect width="56" height="56" rx="12" fill="#0d2b55"/>
+        <polygon points="28,7 11,21 45,21" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round"/>
+        <rect x="14" y="21" width="28" height="20" rx="2" fill="none" stroke="#fff" stroke-width="2.2"/>
+        <rect x="22" y="29" width="12" height="12" rx="2" fill="#2a9d5c"/>
+      </svg>
+      <div>
+        <div class="brand-name">RentMIS</div>
+        <div class="brand-sub">Contract Verification</div>
+      </div>
+    </div>
+
+    <h5 class="mb-1" style="color:#0d2b55">Verify Contract Authenticity</h5>
+    <p class="text-muted mb-4" style="font-size:14px">
+      Enter the <strong>Contract Number</strong> or <strong>Blockchain Reference</strong> printed on your PDF to check if the document is genuine and unmodified.
+    </p>
+
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Contract Number <span class="text-muted fw-normal">(e.g. CNT-20260407-001)</span></label>
+      <input type="text" id="contractNumber" class="form-control" placeholder="CNT-YYYYMMDD-###"/>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <hr style="flex:1;border-color:#dee2e6"/><span class="text-muted small">OR</span><hr style="flex:1;border-color:#dee2e6"/>
+    </div>
+
+    <div class="mb-4">
+      <label class="form-label fw-semibold">Blockchain Reference <span class="text-muted fw-normal">(starts with 0x…)</span></label>
+      <input type="text" id="blockchainRef" class="form-control font-monospace" placeholder="0x…"/>
+    </div>
+
+    <button class="btn btn-primary w-100" onclick="verify()" id="verifyBtn">
+      <i class="ti tabler-shield-check me-2"></i>Verify Document
+    </button>
+
+    <!-- Result -->
+    <div class="result-box" id="resultBox">
+      <div class="status-badge" id="statusBadge"></div>
+      <p id="resultMessage" class="mb-3" style="font-size:14px"></p>
+      <div id="resultDetails"></div>
+    </div>
+
+    <div class="text-center mt-4">
+      <a href="/login" class="text-muted small">← Back to RentMIS</a>
+    </div>
+  </div>
+
+<script>
+async function verify() {
+  const contractNum = document.getElementById('contractNumber').value.trim();
+  const blockchainR = document.getElementById('blockchainRef').value.trim();
+  const btn         = document.getElementById('verifyBtn');
+
+  if (!contractNum && !blockchainR) {
+    alert('Please enter a Contract Number or Blockchain Reference.');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Verifying…';
+
+  try {
+    let url;
+    if (contractNum) {
+      url = `/api/contracts/verify/number/${encodeURIComponent(contractNum)}`;
+    } else {
+      url = `/api/contracts/verify/ref/${encodeURIComponent(blockchainR)}`;
+    }
+
+    const res  = await fetch(url);
+    const json = await res.json();
+
+    if (!res.ok || !json.data) {
+      showError(json.message || 'Contract not found. Please check the reference and try again.');
+      return;
+    }
+
+    showResult(json.data);
+  } catch (e) {
+    showError('Network error. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti tabler-shield-check me-2"></i>Verify Document';
+  }
+}
+
+function showResult(r) {
+  const box = document.getElementById('resultBox');
+  box.className = 'result-box ' + r.status.toLowerCase();
+  box.style.display = 'block';
+
+  const icons = {
+    VALID:    '<i class="ti tabler-circle-check check-icon" style="font-size:24px"></i>',
+    PARTIAL:  '<i class="ti tabler-clock warn-icon" style="font-size:24px"></i>',
+    PENDING:  '<i class="ti tabler-hourglass" style="font-size:24px;color:#6c8ebf"></i>',
+    TAMPERED: '<i class="ti tabler-alert-triangle cross-icon" style="font-size:24px"></i>',
+  };
+  const colors = { VALID:'#2a9d5c', PARTIAL:'#f59e0b', PENDING:'#6c8ebf', TAMPERED:'#dc3545' };
+  // Map PENDING_RESIGN contract status to a visible note in the details
+  const resignNote = r.contractStatus === 'PENDING_RESIGN'
+    ? `<div class="detail-row" style="background:#fff3cd;border-radius:6px;padding:8px 12px;margin-bottom:8px">
+         <span style="color:#856404"><strong>⚠ Re-Sign Required:</strong> All parties must re-sign this contract before it is valid again.</span>
+       </div>`
+    : '';
+
+  document.getElementById('statusBadge').innerHTML =
+    (icons[r.status] || '') +
+    `<span style="color:${colors[r.status]||'#dc3545'}">${r.status}</span>`;
+  document.getElementById('resultMessage').textContent = r.message;
+
+  const check = v => v
+    ? '<i class="ti tabler-check" style="color:#2a9d5c"></i> Yes'
+    : '<i class="ti tabler-x"     style="color:#dc3545"></i> No';
+  const fmt   = dt => dt ? new Date(dt).toLocaleString() : '—';
+  const hash  = h  => h ? `<span class="hash-mono">${h}</span>` : '—';
+
+  document.getElementById('resultDetails').innerHTML = resignNote + `
+    <div class="detail-row"><span class="detail-label">Contract Number</span>  <span class="detail-val">${r.contractNumber||'—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Contract Status</span>   <span class="detail-val">${r.contractStatus||'—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Tenant</span>            <span class="detail-val">${r.tenantName||'—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Landlord</span>          <span class="detail-val">${r.landlordName||'—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Property / Unit</span>   <span class="detail-val">${r.propertyName||'—'} / ${r.unitNumber||'—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Lease Period</span>      <span class="detail-val">${r.startDate||'—'} → ${r.endDate||'—'}</span></div>
+    <div class="detail-row"><span class="detail-label">Monthly Rent</span>      <span class="detail-val">${r.monthlyRent||'—'}</span></div>
+    <hr style="border-color:#dee2e6;margin:8px 0"/>
+    <div class="detail-row"><span class="detail-label">Hash Match</span>        <span class="detail-val">${check(r.hashMatch)}</span></div>
+    <div class="detail-row"><span class="detail-label">Landlord Signed</span>   <span class="detail-val">${check(r.landlordSigned)} ${r.landlordSignedAt ? '— '+fmt(r.landlordSignedAt) : ''}</span></div>
+    <div class="detail-row"><span class="detail-label">Tenant Signed</span>     <span class="detail-val">${check(r.tenantSigned)} ${r.tenantSignedAt ? '— '+fmt(r.tenantSignedAt) : ''}</span></div>
+    <div class="detail-row"><span class="detail-label">Blockchain Ref Match</span><span class="detail-val">${r.blockchainRef ? check(r.blockchainRefMatch) : '<span class="text-muted">N/A</span>'}</span></div>
+    ${r.storedHash ? `<div class="detail-row"><span class="detail-label">Contract Hash</span><span class="detail-val">${hash(r.storedHash)}</span></div>` : ''}
+    ${r.blockchainRef ? `<div class="detail-row"><span class="detail-label">Blockchain Ref</span><span class="detail-val">${hash(r.blockchainRef)}</span></div>` : ''}
+  `;
+  box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function showError(msg) {
+  const box = document.getElementById('resultBox');
+  box.className = 'result-box error';
+  box.style.display = 'block';
+  document.getElementById('statusBadge').innerHTML =
+    '<i class="ti tabler-alert-circle cross-icon" style="font-size:24px"></i>' +
+    '<span style="color:#dc3545">NOT FOUND</span>';
+  document.getElementById('resultMessage').textContent = msg;
+  document.getElementById('resultDetails').innerHTML = '';
+  box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// Allow pressing Enter
+document.addEventListener('keydown', e => { if (e.key === 'Enter') verify(); });
+
+// Auto-fill from ?contract= query param and auto-verify
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const cn = params.get('contract');
+  if (cn) {
+    document.getElementById('contractNumber').value = cn;
+    // slight delay so page renders first
+    setTimeout(verify, 300);
+  }
+})();
+</script>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<footer style="margin-top:32px;text-align:center"><p style="color:#8c99b3;font-size:12px">Copyright &copy; <script>document.write(new Date().getFullYear())</script> <strong>Good Link Solutions</strong>. All rights reserved.</p></footer>
+</body>
+</html>

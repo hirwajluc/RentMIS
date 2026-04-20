@@ -1,0 +1,165 @@
+server:
+  port: 5050
+  address: 0.0.0.0
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+    connection-timeout: 20000
+    max-connections: 8192
+    accept-count: 100
+  compression:
+    enabled: true
+    mime-types: text/html,text/css,text/plain,application/javascript,application/json,image/svg+xml
+    min-response-size: 2048
+
+app:
+  base-url: ${APP_BASE_URL:http://86.48.7.218:5050}
+  upload-dir: ${UPLOAD_DIR:/root/java-projects/RentMIS/uploads/receipts}
+
+spring:
+  application:
+    name: RentMIS
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:rentmis}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8&rewriteBatchedStatements=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048
+    username: ${DB_USERNAME:rentmis_user}
+    password: ${DB_PASSWORD:RentMIS@2024!}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      pool-name: RentMIS-Pool
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        generate_statistics: false
+    open-in-view: false
+
+  web:
+    resources:
+      static-locations:
+        - classpath:/static/
+      cache:
+        period: 604800   # 7-day browser cache for static assets
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /**
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+
+  mvc:
+    async:
+      request-timeout: 60000
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: UTC
+
+  task:
+    execution:
+      pool:
+        core-size: 8
+        max-size: 16
+        queue-capacity: 100
+
+# JWT
+jwt:
+  secret: ${JWT_SECRET:RentMIS-JWT-Secret-Key-2024-Production-Grade-System-Secure-256-bit}
+  expiration: ${JWT_EXPIRATION:86400000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# GLSPay
+glspay:
+  base-url: ${GLSPAY_BASE_URL:http://86.48.7.218:3030}
+  api-key: ${GLSPAY_API_KEY:GLS-qiZdaJTLCy6oXl4irHETYiJLYJSNTdwH}
+  timeout: 30000
+
+# EBM (Rwanda Revenue Authority — Inkomane)
+ebm:
+  base-url: ${EBM_BASE_URL:https://backend-qa.inkomane.rw}
+  client-id: ${EBM_CLIENT_ID:bacf8e00b-54bb-4c04-a395-4e728dda2c35}
+  client-secret: ${EBM_CLIENT_SECRET:K9W8+RZqx1g5CFfPyIbzZnF8rjKiZ5xE1Lt+MH1Ot38=}
+  company-id: ${EBM_COMPANY_ID:cdfbb33e-1255-49fc-9af1-11d92c7686c3}
+  branch-id: ${EBM_BRANCH_ID:e5166abc-dae3-4dfc-9c5e-ad22b16c918a}
+  timeout: 30000
+
+# Blockchain / Contract Integrity
+blockchain:
+  signing-secret: ${BLOCKCHAIN_SIGNING_SECRET:}
+  enabled: true
+
+# NIDA
+nida:
+  api-url: ${NID_API_URL:http://105.179.0.124:2050/turikumwe_goodlink/nid}
+
+# Rate Limiting
+rate-limit:
+  enabled: true
+  capacity: 100
+  refill-tokens: 100
+  refill-duration-seconds: 60
+  auth-capacity: 10
+  auth-refill-tokens: 10
+
+# CORS
+cors:
+  allowed-origins: ${ALLOWED_ORIGINS:http://localhost:5050,http://localhost:2020}
+  allowed-methods: GET,POST,PUT,DELETE,OPTIONS,PATCH
+  allowed-headers: "*"
+  allow-credentials: true
+  max-age: 3600
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  info:
+    env:
+      enabled: true
+
+# Logging
+logging:
+  level:
+    com.rentmis: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/rentmis.log
+
+info:
+  app:
+    name: RentMIS
+    version: 1.0.0
+    description: Production-grade Rent Management Information System

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="600" height="110" viewBox="40 418 600 110" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="navyGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0D2B55"/>
+      <stop offset="100%" stop-color="#122F5E"/>
+    </linearGradient>
+    <style>
+      .wordmark-primary-inv { font-family: Arial, Helvetica, sans-serif; font-weight: 700; fill: #FFFFFF; letter-spacing: 0.04em; }
+      .wordmark-sub-inv { font-family: Arial, Helvetica, sans-serif; font-weight: 400; fill: #A0C4E0; letter-spacing: 0.18em; }
+    </style>
+  </defs>
+  <rect x="40" y="418" width="600" height="110" rx="16" fill="#0D2B55"/>
+  <rect x="64" y="441" width="64" height="64" rx="16" fill="#122F5E" stroke="#1E4A82" stroke-width="1.5"/>
+  <polygon points="96,450 75,465 117,465" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linejoin="round"/>
+  <rect x="81" y="465" width="30" height="22" rx="2.5" fill="none" stroke="#FFFFFF" stroke-width="1.8"/>
+  <rect x="89" y="474" width="10" height="13" rx="2" fill="#2A9D5C"/>
+  <circle cx="75"  cy="465" r="2.5" fill="#2A9D5C"/>
+  <circle cx="96"  cy="450" r="2.5" fill="#2A9D5C"/>
+  <circle cx="117" cy="465" r="2.5" fill="#2A9D5C"/>
+  <rect x="107" y="482" width="15" height="13" rx="3.5" fill="#1E7E48"/>
+  <path d="M114.5,484.5 L111,487 L111,491 Q114.5,493 114.5,493 Q118,491 118,491 L118,487 Z" fill="#FFFFFF" opacity="0.95"/>
+  <path d="M112,489.5 L114,491.5 L117,488" fill="none" stroke="#1E7E48" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="wordmark-primary-inv" x="148" y="477" font-size="28">INKOMANE</text>
+  <text class="wordmark-sub-inv"     x="149" y="498" font-size="10">HOUSE PROPERTY MANAGEMENT</text>
+  <rect x="148" y="505" width="390" height="1.5" rx="1" fill="#C8A84B" opacity="0.8"/>
+  <text x="149" y="520" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="400" fill="#7AABCC" letter-spacing="0.06em">SMART GOVERNANCE · DIGITAL TRANSFORMATION</text>
+</svg>

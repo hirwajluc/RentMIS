@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">EBM Invoices — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <div class="d-flex align-items-center justify-content-between mb-6">
+            <div>
+              <h4 class="mb-1">EBM Invoices</h4>
+              <p class="text-muted mb-0">Electronic Billing Machine receipts and tax invoices</p>
+            </div>
+          </div>
+
+          <!-- Stats Cards -->
+          <div class="row g-4 mb-6">
+            <div class="col-6 col-md-3">
+              <div class="card h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="avatar"><span class="avatar-initial rounded-3 bg-label-primary"><i class="ti tabler-receipt-2"></i></span></div>
+                    <div>
+                      <p class="mb-0 text-muted" style="font-size:12px">Total EBMs</p>
+                      <h5 class="mb-0" id="statTotal">–</h5>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="avatar"><span class="avatar-initial rounded-3 bg-label-success"><i class="ti tabler-circle-check"></i></span></div>
+                    <div>
+                      <p class="mb-0 text-muted" style="font-size:12px">Successful</p>
+                      <h5 class="mb-0" id="statSuccess">–</h5>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="avatar"><span class="avatar-initial rounded-3 bg-label-warning"><i class="ti tabler-clock"></i></span></div>
+                    <div>
+                      <p class="mb-0 text-muted" style="font-size:12px">Pending</p>
+                      <h5 class="mb-0" id="statPending">–</h5>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <div class="card h-100">
+                <div class="card-body">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="avatar"><span class="avatar-initial rounded-3 bg-label-danger"><i class="ti tabler-alert-circle"></i></span></div>
+                    <div>
+                      <p class="mb-0 text-muted" style="font-size:12px">Failed</p>
+                      <h5 class="mb-0" id="statFailed">–</h5>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table Card -->
+          <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div class="input-group" style="max-width:260px">
+                <span class="input-group-text"><i class="ti tabler-search"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Invoice number…"/>
+              </div>
+              <div>
+                <select id="statusFilter" class="form-select form-select-sm">
+                  <option value="">All Statuses</option>
+                  <option value="SUCCESS">Success</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="FAILED">Failed</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle">
+                <thead>
+                  <tr>
+                    <th>EBM Ref</th>
+                    <th>Invoice #</th>
+                    <th>Tenant</th>
+                    <th>Amount</th>
+                    <th>EBM Status</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="invoicesBody">
+                  <tr><td colspan="7" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+              <small class="text-muted" id="tableInfo"></small>
+              <nav><ul class="pagination pagination-sm mb-0" id="pagination"></ul></nav>
+            </div>
+          </div>
+
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- EBM Viewer Modal -->
+<div class="modal fade" id="ebmViewerModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:440px;width:96vw">
+    <div class="modal-content shadow-lg">
+      <div class="modal-header bg-primary text-white py-2">
+        <h6 class="modal-title mb-0"><i class="ti tabler-receipt me-2"></i>EBM Receipt <span id="ebmModalRef" class="fw-bold"></span></h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <!-- iframe wrapper: outer overflow:hidden hard-crops top (165px header) and bottom (110px footer button) -->
+      <div class="modal-body p-0" style="height:70vh;overflow:hidden;position:relative;background:#fff">
+        <!-- Loading overlay -->
+        <div id="ebmLoading" style="position:absolute;inset:0;background:#fff;z-index:10;display:flex;align-items:center;justify-content:center">
+          <div class="text-center text-muted">
+            <div class="spinner-border mb-3 text-primary"></div>
+            <div>Loading EBM receipt…</div>
+            <small class="text-muted d-block mt-1">This may take a few seconds</small>
+          </div>
+        </div>
+        <!-- Scroll div: top:-200px hides Inkomane page header; bottom:-400px crops footer buttons -->
+        <div id="ebmScrollBody" style="position:absolute;top:-200px;bottom:-400px;left:0;right:0;overflow-y:auto;overflow-x:hidden">
+          <iframe id="ebmIframe" src="about:blank" scrolling="no" style="width:440px;height:1600px;border:none;display:block"></iframe>
+        </div>
+      </div>
+      <div class="modal-footer py-2 gap-2 justify-content-between">
+        <button class="btn btn-sm btn-success" onclick="downloadEBMPdf()">
+          <i class="ti tabler-file-download me-1"></i>Download PDF
+        </button>
+        <div class="d-flex gap-2">
+          <a id="ebmOpenLink" href="#" target="_blank" class="btn btn-sm btn-outline-primary">
+            <i class="ti tabler-external-link me-1"></i>Open in Tab
+          </a>
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+let page = 0, searchTimer;
+let _ebmCurrentVC = null;
+
+const EBM_STATUS_COLOR = { SUCCESS: 'success', PENDING: 'warning', FAILED: 'danger' };
+
+// ── Load stats ──────────────────────────────────────────────────────────────
+async function loadStats() {
+  const res = await API.getInvoiceStats();
+  if (res && res.ok && res.data.data) {
+    const s = res.data.data;
+    document.getElementById('statTotal').textContent   = s.total   ?? '–';
+    document.getElementById('statSuccess').textContent = s.success ?? '–';
+    document.getElementById('statPending').textContent = s.pending ?? '–';
+    document.getElementById('statFailed').textContent  = s.failed  ?? '–';
+  }
+}
+
+// ── Load invoices table ─────────────────────────────────────────────────────
+async function load() {
+  const ebmStatus = document.getElementById('statusFilter').value;
+  const params = { page, size: 20 };
+  if (ebmStatus) params.ebmStatus = ebmStatus;
+
+  const res = await API.getInvoices(params);
+  const body = document.getElementById('invoicesBody');
+
+  if (!res || !res.ok || !res.data.data) {
+    body.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">Failed to load invoices</td></tr>';
+    return;
+  }
+
+  const p = res.data.data;
+  const items = p.content || [];
+
+  if (!items.length) {
+    body.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-muted">No invoices found</td></tr>';
+    document.getElementById('tableInfo').textContent = '';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  const statusColor = c => EBM_STATUS_COLOR[c] || 'secondary';
+
+  body.innerHTML = items.map(inv => {
+    const tenant = inv.payment
+      ? (inv.payment.tenantName || (inv.payment.tenant
+          ? inv.payment.tenant.firstName + ' ' + inv.payment.tenant.lastName : '–'))
+      : (inv.tenantName || '–');
+    const dateStr = inv.issuedAt
+      ? new Date(inv.issuedAt).toLocaleDateString()
+      : (inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : '–');
+    const amount  = (inv.totalAmount || inv.amount || 0).toLocaleString();
+    const ebmNum  = inv.ebmInvoiceNumber || '<span class="text-muted fst-italic">Pending</span>';
+    const status  = inv.ebmStatus || 'PENDING';
+    const vc      = inv.ebmVerificationCode
+                 || inv.qrCode
+                 || (inv.verificationUrl && inv.verificationUrl.includes('/ebm/')
+                     ? inv.verificationUrl.split('/ebm/').pop() : null);
+    const hasEbm  = !!vc;
+
+    return `
+    <tr>
+      <td><span class="fw-semibold small">${ebmNum}</span></td>
+      <td><code class="small">${inv.invoiceNumber || '–'}</code></td>
+      <td>${tenant}</td>
+      <td>RWF ${amount}</td>
+      <td><span class="badge bg-label-${statusColor(status)}">${status}</span></td>
+      <td>${dateStr}</td>
+      <td class="text-nowrap">
+        ${hasEbm
+          ? `<button class="btn btn-sm btn-icon btn-primary me-1" onclick="openEBMViewer(${inv.id}, '${vc}', '${inv.ebmInvoiceNumber || ''}')" title="View EBM Receipt">
+               <i class="ti tabler-receipt"></i>
+             </button>`
+          : `<button class="btn btn-sm btn-icon btn-outline-secondary me-1" disabled title="No EBM receipt yet">
+               <i class="ti tabler-receipt"></i>
+             </button>`}
+        ${status !== 'SUCCESS'
+          ? `<button class="btn btn-sm btn-icon btn-outline-warning" onclick="retryEbm(${inv.id}, this)" title="Retry EBM">
+               <i class="ti tabler-refresh"></i>
+             </button>`
+          : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  const total = p.totalElements || items.length;
+  const shown = p.numberOfElements || items.length;
+  document.getElementById('tableInfo').textContent =
+    `Showing ${p.number * p.size + 1}–${p.number * p.size + shown} of ${total}`;
+
+  document.getElementById('pagination').innerHTML = Array.from(
+    { length: p.totalPages || 1 }, (_, i) =>
+    `<li class="page-item${i === p.number ? ' active' : ''}">
+       <a class="page-link" style="cursor:pointer" onclick="gotoPage(${i})">${i + 1}</a>
+     </li>`
+  ).join('');
+}
+
+// ── EBM Modal ───────────────────────────────────────────────────────────────
+function openEBMViewer(id, vc, ref) {
+  _ebmCurrentVC = vc;
+  document.getElementById('ebmModalRef').textContent = ref ? '#' + ref : '';
+  document.getElementById('ebmOpenLink').href = vc ? `https://qa.inkomane.rw/ebm/${vc}` : '#';
+
+  const iframe  = document.getElementById('ebmIframe');
+  const loading = document.getElementById('ebmLoading');
+  loading.style.display = 'flex';
+  loading.innerHTML = `<div class="text-center text-muted">
+    <div class="spinner-border mb-3 text-primary"></div>
+    <div>Loading EBM receipt…</div>
+    <small class="text-muted d-block mt-1">This may take a few seconds</small>
+  </div>`;
+  iframe.src = 'about:blank';
+
+  new bootstrap.Modal(document.getElementById('ebmViewerModal')).show();
+
+  if (!vc) {
+    loading.innerHTML = '<div class="text-danger py-4 text-center">No EBM code available for this payment.</div>';
+    return;
+  }
+  // onload fires when initial HTML is parsed; give React 3s to hydrate + render receipt
+  iframe.onload = function() {
+    if (iframe.src === 'about:blank') return;
+    setTimeout(() => { loading.style.display = 'none'; }, 3000);
+  };
+  iframe.src = `https://qa.inkomane.rw/ebm/${vc}`;
+}
+window.openEBMViewer = openEBMViewer;
+
+function downloadEBMPdf() {
+  if (_ebmCurrentVC) window.open(`https://qa.inkomane.rw/ebm/${_ebmCurrentVC}`, '_blank');
+}
+
+// ── Retry EBM ───────────────────────────────────────────────────────────────
+async function retryEbm(id, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+  const res = await API.retryEbm(id);
+
+  if (res && res.ok && res.data && res.data.data) {
+    const inv = res.data.data;
+    const vc = inv.ebmVerificationCode || inv.qrCode;
+    await load();
+    await loadStats();
+    if (vc) openEBMViewer(id, vc, inv.ebmInvoiceNumber);
+  } else {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti tabler-refresh"></i>';
+    alert((res && res.data && res.data.message) || 'Retry failed. Please try again.');
+  }
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function gotoPage(n) { page = n; load(); }
+
+document.getElementById('statusFilter').addEventListener('change', () => { page = 0; load(); });
+document.getElementById('searchInput').addEventListener('input', () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => { page = 0; load(); }, 300);
+});
+
+loadStats();
+load();
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>

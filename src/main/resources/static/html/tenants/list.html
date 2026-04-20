@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">Tenants — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <div class="d-flex align-items-center justify-content-between mb-6">
+            <div><h4 class="mb-1">Tenants</h4><p class="text-muted mb-0">All registered tenants</p></div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tenantModal" onclick="openCreate()">
+              <i class="ti tabler-plus me-2"></i>Add Tenant
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="input-group w-auto" style="max-width:280px">
+                <span class="input-group-text"><i class="ti tabler-search"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Search tenants…"/>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>National ID</th><th>Status</th><th>Actions</th></tr>
+                </thead>
+                <tbody id="tenantsBody">
+                  <tr><td colspan="7" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+              <small class="text-muted" id="tableInfo"></small>
+              <nav><ul class="pagination pagination-sm mb-0" id="pagination"></ul></nav>
+            </div>
+          </div>
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- Tenant Modal -->
+<div class="modal fade" id="tenantModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="tenantModalTitle">Add Tenant</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="tenantForm">
+        <div class="modal-body">
+          <div id="tenantErr" class="alert alert-danger d-none"></div>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">First Name *</label>
+              <input type="text" class="form-control" id="tFirst" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Last Name *</label>
+              <input type="text" class="form-control" id="tLast" required/>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Email *</label>
+              <input type="email" class="form-control" id="tEmail" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Phone</label>
+              <input type="text" class="form-control" id="tPhone" placeholder="+250…"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">National ID</label>
+              <input type="text" class="form-control" id="tNid"/>
+            </div>
+            <div id="pwdGroup">
+              <div class="col-12 mt-2">
+                <label class="form-label">Password *</label>
+                <input type="password" class="form-control" id="tPassword" placeholder="Min 8 chars, uppercase, number, symbol"/>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Address</label>
+              <input type="text" class="form-control" id="tAddress"/>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <span id="tenantSaveTxt">Save</span>
+            <span id="tenantSaveSpinner" class="spinner-border spinner-border-sm d-none ms-1"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+let page = 0, search = '';
+const tModal = new bootstrap.Modal(document.getElementById('tenantModal'));
+
+async function loadTenants() {
+  const params = { role: 'TENANT', page, size: 20 };
+  if (search) params.search = search;
+  const res = await API.getUsers(params);
+  if (!res || !res.ok) return;
+  const p = res.data.data;
+  const body = document.getElementById('tenantsBody');
+
+  if (!p || !p.content || p.content.length === 0) {
+    body.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No tenants found</td></tr>';
+    return;
+  }
+  body.innerHTML = p.content.map((u, i) => `
+    <tr>
+      <td>${page*20+i+1}</td>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          <div class="avatar avatar-sm">
+            <span class="avatar-initial rounded-circle bg-label-primary">${u.firstName.charAt(0)}</span>
+          </div>
+          <div><strong>${u.firstName} ${u.lastName}</strong></div>
+        </div>
+      </td>
+      <td>${u.email}</td>
+      <td>${u.phone || '–'}</td>
+      <td>${u.nationalId || '–'}</td>
+      <td><span class="badge bg-label-${u.isActive ? 'success' : 'danger'}">${u.isActive ? 'Active' : 'Inactive'}</span></td>
+      <td>
+        <div class="d-flex gap-1">
+          <a href="/html/payments/list.html?tenantId=${u.id}" class="btn btn-sm btn-icon btn-outline-primary" title="View Payments">
+            <i class="ti tabler-credit-card"></i>
+          </a>
+          <a href="/html/contracts/list.html?tenantId=${u.id}" class="btn btn-sm btn-icon btn-outline-info" title="Contracts">
+            <i class="ti tabler-file-text"></i>
+          </a>
+          <button class="btn btn-sm btn-icon btn-outline-${u.isActive?'warning':'success'}" onclick="toggleStatus(${u.id})" title="${u.isActive?'Deactivate':'Activate'}">
+            <i class="ti tabler-${u.isActive?'user-off':'user-check'}"></i>
+          </button>
+        </div>
+      </td>
+    </tr>`).join('');
+
+  document.getElementById('tableInfo').textContent = `${p.totalElements} tenants`;
+  const pg = document.getElementById('pagination');
+  pg.innerHTML = Array.from({length: p.totalPages}, (_, i) =>
+    `<li class="page-item${i===p.number?' active':''}"><a class="page-link" onclick="gotoPage(${i})">${i+1}</a></li>`
+  ).join('');
+}
+
+function gotoPage(n) { page = n; loadTenants(); }
+
+document.getElementById('searchInput').addEventListener('input', function() {
+  search = this.value.trim(); page = 0; loadTenants();
+});
+
+function openCreate() {
+  document.getElementById('tenantModalTitle').textContent = 'Add Tenant';
+  document.getElementById('tenantForm').reset();
+  document.getElementById('pwdGroup').style.display = '';
+  document.getElementById('tenantErr').classList.add('d-none');
+}
+
+document.getElementById('tenantForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const sp = document.getElementById('tenantSaveSpinner');
+  sp.classList.remove('d-none');
+
+  const body = {
+    firstName: document.getElementById('tFirst').value,
+    lastName:  document.getElementById('tLast').value,
+    email:     document.getElementById('tEmail').value,
+    phone:     document.getElementById('tPhone').value || null,
+    nationalId:document.getElementById('tNid').value || null,
+    password:  document.getElementById('tPassword').value,
+    address:   document.getElementById('tAddress').value || null,
+    role:      'TENANT'
+  };
+
+  const res = await fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + Auth.getToken() },
+    body: JSON.stringify(body)
+  }).then(r => r.json()).catch(() => null);
+
+  sp.classList.add('d-none');
+  if (res && res.success) { tModal.hide(); loadTenants(); }
+  else {
+    const err = document.getElementById('tenantErr');
+    err.textContent = (res && res.message) || 'Failed to create tenant.';
+    err.classList.remove('d-none');
+  }
+});
+
+async function toggleStatus(id) {
+  const res = await API.toggleUser(id);
+  if (res && res.ok) loadTenants();
+}
+
+loadTenants();
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>

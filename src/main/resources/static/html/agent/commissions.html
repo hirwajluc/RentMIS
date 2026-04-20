@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">Commissions — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <div class="mb-6">
+            <h4 class="mb-1">Commissions</h4>
+            <p class="text-muted mb-0">Commission records from your successful linkages</p>
+          </div>
+
+          <!-- Summary cards -->
+          <div class="row g-4 mb-6" id="summaryCards">
+            <div class="col-12 text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-datatable table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Linkage</th>
+                    <th>Property Reference</th>
+                    <th>Unit</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Approved At</th>
+                    <th>Paid At</th>
+                    <th>Created</th>
+                  </tr>
+                </thead>
+                <tbody id="commissionsBody">
+                  <tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+              <small class="text-muted" id="tableInfo"></small>
+              <nav><ul class="pagination pagination-sm mb-0" id="pagination"></ul></nav>
+            </div>
+          </div>
+
+          <div class="alert alert-light border mt-4 py-2 px-3 small">
+            <i class="ti tabler-shield-lock me-1 text-muted"></i>
+            Commission records contain only your brokerage reference. Tenant and landlord identities are never included.
+          </div>
+
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+let page = 0;
+const commColor = { PENDING:'warning', APPROVED:'info', PAID:'success' };
+const commIcon  = { PENDING:'tabler-clock', APPROVED:'tabler-circle-check', PAID:'tabler-coin' };
+
+function summaryCard(label, value, icon, color) {
+  return `<div class="col-6 col-md-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-body d-flex align-items-center gap-3">
+        <div class="avatar flex-shrink-0">
+          <span class="avatar-initial rounded bg-label-${color}"><i class="ti ${icon} icon-md"></i></span>
+        </div>
+        <div>
+          <div class="fs-3 fw-bold">${value}</div>
+          <div class="text-muted small">${label}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function loadSummary() {
+  const res = await request('GET', '/agent/dashboard');
+  if (!res || !res.ok) return;
+  const d = res.data.data;
+  document.getElementById('summaryCards').innerHTML = [
+    summaryCard('Total Commissions', d.totalCommissions, 'tabler-coin', 'primary'),
+    summaryCard('Pending',           d.pendingCommissions, 'tabler-clock', 'warning'),
+    summaryCard('Approved',          d.approvedCommissions, 'tabler-circle-check', 'info'),
+    summaryCard('Paid',              d.paidCommissions, 'tabler-cash', 'success'),
+  ].join('');
+}
+
+async function loadCommissions() {
+  const params = { page, size: 20, sort: 'createdAt,desc' };
+  const res = await request('GET', '/agent/commissions?' + new URLSearchParams(params));
+  const tbody = document.getElementById('commissionsBody');
+
+  if (!res || !res.ok || !res.data.data || res.data.data.content.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" class="text-center py-5 text-muted">
+      <i class="ti tabler-coin icon-xl mb-3 d-block"></i>
+      No commissions yet. Commissions are created automatically when a contract is signed from your linkage.
+    </td></tr>`;
+    document.getElementById('tableInfo').textContent = '0 commissions';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  const p = res.data.data;
+  tbody.innerHTML = p.content.map(c => `
+    <tr>
+      <td><small class="text-muted">#${c.id}</small></td>
+      <td><a href="/html/agent/linkages.html" class="text-muted small">#${c.linkageId}</a></td>
+      <td><span class="fw-semibold small">${c.propertyRef || '–'}</span></td>
+      <td><small>${c.unitRef || '–'}</small></td>
+      <td>
+        ${c.amount != null
+          ? `<strong>${c.amount.toLocaleString()} ${c.currency||'RWF'}</strong>`
+          : '<span class="text-muted small">Pending review</span>'}
+      </td>
+      <td>
+        <span class="badge bg-label-${commColor[c.status]||'secondary'}">
+          <i class="ti ${commIcon[c.status]||'tabler-circle'} me-1"></i>${c.status}
+        </span>
+      </td>
+      <td><small>${c.approvedAt ? new Date(c.approvedAt).toLocaleDateString() : '–'}</small></td>
+      <td><small>${c.paidAt ? new Date(c.paidAt).toLocaleDateString() : '–'}</small></td>
+      <td><small>${c.createdAt ? new Date(c.createdAt).toLocaleDateString() : '–'}</small></td>
+    </tr>`).join('');
+
+  document.getElementById('tableInfo').textContent = `${p.totalElements} commission(s)`;
+  document.getElementById('pagination').innerHTML = Array.from({length: p.totalPages}, (_,i) =>
+    `<li class="page-item${i===p.number?' active':''}">
+       <a class="page-link" href="javascript:void(0)" onclick="gotoPage(${i})">${i+1}</a>
+     </li>`).join('');
+}
+
+function gotoPage(n) { page = n; loadCommissions(); }
+
+loadSummary();
+loadCommissions();
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(e => e.textContent = new Date().getFullYear());</script>
+</body>
+</html>

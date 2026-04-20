@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">Pay Rent — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+  <style>
+    .month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; max-height: 320px; overflow-y: auto; padding: 4px 2px; }
+    .month-tile { border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all .15s; user-select: none; position: relative; }
+    .month-tile:hover:not(.disabled) { border-color: #696cff; background: #f0f0ff; }
+    .month-tile.selected { border-color: #696cff; background: #ebebff; }
+    .month-tile.paid     { border-color: #71dd37; background: #f0fff0; cursor: not-allowed; opacity: .75; }
+    .month-tile.pending-approval { border-color: #ffab00; background: #fffbf0; cursor: not-allowed; opacity: .85; }
+    .month-tile.future   { border-color: #ffd966; background: #fffdf0; }
+    .month-tile.future.selected { border-color: #f39c12; background: #fff3cd; }
+    .month-tile.disabled { pointer-events: none; }
+    .month-tile .tile-month { font-size: .85rem; font-weight: 600; color: #333; }
+    .month-tile .tile-year  { font-size: .72rem; color: #888; }
+    .month-tile .tile-badge { position: absolute; top: 6px; right: 8px; font-size: .65rem; }
+    .month-tile input[type=checkbox] { display: none; }
+    .summary-bar { background: #f5f5ff; border: 1.5px solid #696cff; border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+    .summary-bar .summary-count { font-size: .9rem; color: #555; }
+    .summary-bar .summary-total { font-size: 1.1rem; font-weight: 700; color: #696cff; }
+    .method-btn { border: 2px solid #e0e0e0; border-radius: 10px; padding: 12px 16px; cursor: pointer; transition: all .15s; background: #fff; text-align: center; flex: 1; }
+    .method-btn:hover { border-color: #696cff; background: #f5f5ff; }
+    .method-btn.active { border-color: #696cff; background: #ebebff; }
+    .method-btn .method-icon { font-size: 1.5rem; display: block; margin-bottom: 4px; }
+    .method-btn .method-label { font-size: .8rem; font-weight: 600; }
+    .sub-method-btn { border: 1.5px solid #e0e0e0; border-radius: 8px; padding: 8px 14px; cursor: pointer; transition: all .15s; background: #fff; flex: 1; text-align: center; }
+    .sub-method-btn:hover { border-color: #696cff; background: #f5f5ff; }
+    .sub-method-btn.active { border-color: #696cff; background: #ebebff; font-weight: 600; }
+    .receipt-drop { border: 2px dashed #c0c0c0; border-radius: 10px; padding: 24px; text-align: center; cursor: pointer; transition: border-color .15s; }
+    .receipt-drop:hover, .receipt-drop.dragover { border-color: #696cff; background: #f5f5ff; }
+    .receipt-drop.has-file { border-color: #71dd37; background: #f0fff5; }
+  </style>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <h4 class="mb-6">Pay Rent</h4>
+
+          <div class="row g-6 justify-content-center">
+            <div class="col-md-6 col-lg-5">
+
+              <!-- Contract selector (shown only when tenant has multiple active contracts) -->
+              <div class="card mb-4" id="contractSelectorCard" style="display:none !important">
+                <div class="card-body py-3">
+                  <label class="form-label fw-semibold mb-2"><i class="ti tabler-file-text me-1"></i>Select Contract / Unit</label>
+                  <select class="form-select" id="contractSelect" onchange="onContractChange()">
+                  </select>
+                </div>
+              </div>
+
+              <!-- Unit info card -->
+              <div class="card mb-4" id="unitCard" style="display:none !important">
+                <div class="card-body">
+                  <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="avatar"><span class="avatar-initial rounded-3 bg-label-primary"><i class="ti tabler-door"></i></span></div>
+                    <div>
+                      <h6 class="mb-0" id="unitName">–</h6>
+                      <small class="text-muted" id="unitProperty">–</small>
+                    </div>
+                  </div>
+                  <div class="d-flex justify-content-between">
+                    <span class="text-muted">Monthly Rent</span>
+                    <strong id="unitRent">–</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Payment form -->
+              <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                  <h5 class="card-title mb-0">Initiate Rent Payment</h5>
+                  <span class="text-muted small">Select one or more months</span>
+                </div>
+                <div class="card-body">
+                  <div id="paymentMsg" class="d-none mb-3"></div>
+
+                  <form id="paymentForm">
+                    <!-- Payment Method -->
+                    <div class="mb-4">
+                      <label class="form-label fw-semibold mb-2">Payment Method</label>
+                      <div class="d-flex gap-2">
+                        <div class="method-btn active" id="btnGlspay" onclick="setMethod('GLSPAY')">
+                          <span class="method-icon">💳</span>
+                          <span class="method-label">GLSPay</span>
+                          <div class="text-muted" style="font-size:.68rem">Online / Card</div>
+                        </div>
+                        <div class="method-btn" id="btnManual" onclick="setMethod('MANUAL')">
+                          <span class="method-icon">🏦</span>
+                          <span class="method-label">Manual</span>
+                          <div class="text-muted" style="font-size:.68rem">Cash / Bank Deposit</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Manual sub-method selector -->
+                    <div id="manualSubMethod" class="mb-4" style="display:none">
+                      <label class="form-label fw-semibold mb-2">Manual Payment Type</label>
+                      <div class="d-flex gap-2">
+                        <div class="sub-method-btn active" id="btnCash" onclick="setSubMethod('CASH')">
+                          <i class="ti tabler-cash me-1"></i> Cash
+                        </div>
+                        <div class="sub-method-btn" id="btnBank" onclick="setSubMethod('BANK_TRANSFER')">
+                          <i class="ti tabler-building-bank me-1"></i> Bank Deposit
+                        </div>
+                      </div>
+                      <!-- Cash note -->
+                      <div id="cashNote" class="alert alert-warning py-2 small mt-2">
+                        <i class="ti tabler-info-circle me-1"></i>
+                        Pay cash directly to your landlord. Submit this request and your landlord will confirm receipt.
+                      </div>
+                      <!-- Bank transfer receipt upload -->
+                      <div id="bankUploadArea" style="display:none" class="mt-2">
+                        <label class="form-label mb-1">Upload Bank Deposit Slip / Bordereau</label>
+                        <div class="receipt-drop" id="receiptDrop" onclick="document.getElementById('receiptFile').click()">
+                          <i class="ti tabler-cloud-upload fs-4 text-muted d-block mb-1"></i>
+                          <span id="receiptDropLabel" class="text-muted small">Click or drag &amp; drop receipt (JPG, PNG, PDF)</span>
+                        </div>
+                        <input type="file" id="receiptFile" accept=".jpg,.jpeg,.png,.pdf" class="d-none" onchange="onReceiptSelected(this)"/>
+                      </div>
+                    </div>
+
+                    <!-- Month grid -->
+                    <div class="mb-4">
+                      <div class="d-flex align-items-center justify-content-between mb-2">
+                        <label class="form-label mb-0">Payment Period *</label>
+                        <div class="d-flex gap-2">
+                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="selectUnpaid()">Select unpaid</button>
+                          <button type="button" class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="clearSelection()">Clear</button>
+                        </div>
+                      </div>
+                      <div class="month-grid" id="monthGrid">
+                        <div class="text-muted small py-3 text-center col-span-all">Loading months…</div>
+                      </div>
+                    </div>
+
+                    <!-- Summary bar -->
+                    <div class="summary-bar mb-4" id="summaryBar" style="display:none !important">
+                      <span class="summary-count" id="summaryCount">0 months selected</span>
+                      <span class="summary-total" id="summaryTotal">RWF 0</span>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="mb-4">
+                      <label class="form-label">Notes</label>
+                      <input type="text" class="form-control" id="pNotes" placeholder="Optional notes…"/>
+                    </div>
+
+                    <div id="glspayInfo" class="alert alert-info py-2 small">
+                      <i class="ti tabler-lock me-1"></i>
+                      Payments processed securely via <strong>GLSPay</strong>. You will be redirected to complete payment.
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" id="payBtn" disabled>
+                      <i class="ti tabler-credit-card me-2"></i>
+                      <span id="payBtnText">Select months to pay</span>
+                      <span id="paySpinner" class="spinner-border spinner-border-sm d-none ms-2"></span>
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-6 col-lg-7">
+              <div class="card">
+                <div class="card-header"><h5 class="card-title mb-0">Recent Payments</h5></div>
+                <div class="table-responsive">
+                  <table class="table table-sm">
+                    <thead><tr><th>Reference</th><th>Period</th><th>Amount</th><th>Status</th></tr></thead>
+                    <tbody id="recentPayments">
+                      <tr><td colspan="4" class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+const MONTH_NAMES  = ['January','February','March','April','May','June',
+                      'July','August','September','October','November','December'];
+const MONTH_SHORT  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+let myUnitId      = null;
+let monthlyRent   = 0;
+let paidPeriods   = new Set();   // 'YYYY-M' for COMPLETED/PENDING/PROCESSING
+let pendingPeriods = new Set();  // 'YYYY-M' for PENDING_CONFIRMATION (awaiting landlord)
+const selected    = new Set();   // 'YYYY-M' currently checked
+let payMethod     = 'GLSPAY';    // GLSPAY | CASH | BANK_TRANSFER
+let receiptFile   = null;
+let allContracts  = [];          // all active contracts for this tenant
+
+function setMethod(m) {
+  if (m === 'GLSPAY') {
+    payMethod = 'GLSPAY';
+    document.getElementById('btnGlspay').classList.add('active');
+    document.getElementById('btnManual').classList.remove('active');
+    document.getElementById('manualSubMethod').style.display = 'none';
+    document.getElementById('glspayInfo').style.display = '';
+  } else {
+    document.getElementById('btnGlspay').classList.remove('active');
+    document.getElementById('btnManual').classList.add('active');
+    document.getElementById('manualSubMethod').style.display = '';
+    document.getElementById('glspayInfo').style.display = 'none';
+    setSubMethod('CASH'); // default sub-method
+  }
+  updateSummary();
+}
+
+function setSubMethod(sub) {
+  payMethod = sub;
+  document.getElementById('btnCash').classList.toggle('active', sub === 'CASH');
+  document.getElementById('btnBank').classList.toggle('active', sub === 'BANK_TRANSFER');
+  document.getElementById('cashNote').style.display = sub === 'CASH' ? '' : 'none';
+  document.getElementById('bankUploadArea').style.display = sub === 'BANK_TRANSFER' ? '' : 'none';
+  updateSummary();
+}
+
+function onReceiptSelected(input) {
+  if (input.files && input.files[0]) {
+    receiptFile = input.files[0];
+    const drop = document.getElementById('receiptDrop');
+    drop.classList.add('has-file');
+    document.getElementById('receiptDropLabel').textContent = receiptFile.name;
+  }
+}
+
+// Drag & drop on receipt area
+document.addEventListener('DOMContentLoaded', () => {
+  const drop = document.getElementById('receiptDrop');
+  if (!drop) return;
+  drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+  drop.addEventListener('drop', e => {
+    e.preventDefault();
+    drop.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) {
+      receiptFile = f;
+      drop.classList.add('has-file');
+      document.getElementById('receiptDropLabel').textContent = f.name;
+    }
+  });
+});
+
+// ── Handle GLSPay return redirect ──────────────────────────────────────────
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const payRef = params.get('pay');
+  const cancelStatus = params.get('status');
+
+  if (payRef) {
+    history.replaceState(null, '', window.location.pathname);
+    if (cancelStatus === 'cancelled') {
+      showMsg('warning', `Payment cancelled. Reference: ${payRef}`);
+    } else {
+      showMsg('info', 'Verifying payment status…');
+      const res = await API.verifyPaymentByRef(payRef);
+      if (res && res.ok && res.data.data) {
+        const p = res.data.data;
+        if (p.status === 'COMPLETED') {
+          showMsg('success', `Payment confirmed! Reference: ${p.referenceNumber}`);
+        } else if (p.status === 'FAILED') {
+          showMsg('danger', `Payment failed. Reference: ${p.referenceNumber}. Please try again.`);
+        } else {
+          showMsg('warning', `Payment status: ${p.status}. Reference: ${p.referenceNumber}.`);
+        }
+      } else {
+        showMsg('warning', `Could not verify payment ${payRef}. Please refresh.`);
+      }
+    }
+  }
+})();
+
+// ── Main init ───────────────────────────────────────────────────────────────
+(async () => {
+  // Load all active contracts for this tenant
+  const contRes = await API.getContracts({ status: 'ACTIVE', size: 50 });
+  if (!contRes?.ok || !contRes.data.data?.content?.length) {
+    showMsg('warning', 'No active contract found for your account. Please contact your landlord.');
+    document.getElementById('payBtn').disabled = true;
+    await loadRecentPayments();
+    return;
+  }
+
+  allContracts = contRes.data.data.content;
+
+  if (allContracts.length > 1) {
+    // Populate selector
+    const sel = document.getElementById('contractSelect');
+    allContracts.forEach((c, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      const unitLabel = c.unit?.unitNumber || ('Unit #' + (c.unit?.id || i+1));
+      const propLabel = c.unit?.propertyName ? ' — ' + c.unit.propertyName : '';
+      const rentLabel = c.monthlyRent ? '  (RWF ' + parseFloat(c.monthlyRent).toLocaleString() + '/mo)' : '';
+      opt.textContent = unitLabel + propLabel + rentLabel;
+      sel.appendChild(opt);
+    });
+    document.getElementById('contractSelectorCard').style.removeProperty('display');
+  }
+
+  // Load data for the first (or only) contract
+  await loadContractData(allContracts[0]);
+  await loadRecentPayments();
+})();
+
+// ── Load unit + payment data for a specific contract ────────────────────────
+async function loadContractData(contract) {
+  // Clear previous state
+  paidPeriods    = new Set();
+  pendingPeriods = new Set();
+  selected.clear();
+
+  const u = contract.unit;
+
+  if (!u?.id) {
+    showMsg('warning', 'Could not load unit information for the selected contract.');
+    return;
+  }
+
+  myUnitId    = u.id;
+  monthlyRent = parseFloat(contract.monthlyRent) > 0
+      ? parseFloat(contract.monthlyRent)
+      : parseFloat(u.rentAmount) || 0;
+
+  // Update unit card
+  document.getElementById('unitName').textContent     = u.unitNumber   || '–';
+  document.getElementById('unitProperty').textContent = u.propertyName || '';
+  document.getElementById('unitRent').textContent     = 'RWF ' + monthlyRent.toLocaleString();
+  document.getElementById('unitCard').style.removeProperty('display');
+
+  // Load payments for this specific unit to mark paid/pending periods
+  const payRes = await API.getPayments({ unitId: myUnitId, size: 200 });
+  if (payRes?.ok && payRes.data.data?.content) {
+    payRes.data.data.content.forEach(p => {
+      if (!p.paymentPeriodMonth || !p.paymentPeriodYear) return;
+      const key = p.paymentPeriodYear + '-' + p.paymentPeriodMonth;
+      if (['COMPLETED','PENDING','PROCESSING'].includes(p.status)) {
+        paidPeriods.add(key);
+      } else if (p.status === 'PENDING_CONFIRMATION') {
+        pendingPeriods.add(key);
+      }
+    });
+  }
+
+  const contractStart = contract.startDate ? new Date(contract.startDate) : null;
+  const contractEnd   = contract.endDate   ? new Date(contract.endDate)   : null;
+  buildMonthGrid(contractStart, contractEnd);
+}
+
+// ── Contract selector change ─────────────────────────────────────────────────
+async function onContractChange() {
+  const idx = parseInt(document.getElementById('contractSelect').value);
+  const contract = allContracts[idx];
+  if (!contract) return;
+  clearSelection();
+  await loadContractData(contract);
+}
+
+// ── Build month tiles ───────────────────────────────────────────────────────
+function buildMonthGrid(contractStart, contractEnd) {
+  const now    = new Date();
+  const nowY   = now.getFullYear();
+  const nowM   = now.getMonth() + 1;
+
+  // Range: contract start → max(now, contractEnd) + allow up to 3 advance months
+  const minDate  = contractStart || new Date(nowY - 1, 0, 1);
+  const minY = minDate.getFullYear(), minM = minDate.getMonth() + 1;
+
+  // Future ceiling: contract end OR 3 months from now (whichever is later)
+  const futureCeil = contractEnd
+    ? new Date(Math.max(contractEnd.getTime(), new Date(nowY, nowM + 2, 1).getTime()))
+    : new Date(nowY, nowM + 2, 1);
+  const maxY = futureCeil.getFullYear(), maxM = futureCeil.getMonth() + 1;
+
+  const grid = document.getElementById('monthGrid');
+  grid.innerHTML = '';
+
+  for (let y = minY; y <= maxY; y++) {
+    const mStart = (y === minY) ? minM : 1;
+    const mEnd   = (y === maxY) ? maxM : 12;
+    for (let m = mStart; m <= mEnd; m++) {
+      const key        = y + '-' + m;
+      const isPaid     = paidPeriods.has(key);
+      const isPending  = pendingPeriods.has(key);
+      const isFuture   = (y > nowY) || (y === nowY && m > nowM);
+      const isBlocked  = isPaid || isPending;
+
+      const tile = document.createElement('div');
+      tile.className = 'month-tile' +
+        (isPaid    ? ' paid disabled'             : '') +
+        (isPending ? ' pending-approval disabled' : '') +
+        (isFuture && !isBlocked ? ' future' : '');
+      tile.dataset.key = key;
+      tile.innerHTML = `
+        <div class="tile-month">${MONTH_NAMES[m-1]}</div>
+        <div class="tile-year">${y}</div>
+        ${isPaid    ? '<span class="tile-badge badge bg-label-success">&#10003; Paid</span>'              : ''}
+        ${isPending ? '<span class="tile-badge badge bg-label-warning" style="font-size:.6rem">Pending Approval</span>' : ''}
+        ${isFuture && !isBlocked ? '<span class="tile-badge badge bg-label-warning" style="font-size:.6rem">Advance</span>' : ''}
+      `;
+
+      if (!isBlocked) {
+        tile.addEventListener('click', () => toggleMonth(key, tile));
+        // Default: select current month
+        if (y === nowY && m === nowM) {
+          toggleMonth(key, tile);
+        }
+      }
+      grid.appendChild(tile);
+    }
+  }
+  updateSummary();
+}
+
+function toggleMonth(key, tile) {
+  if (selected.has(key)) {
+    selected.delete(key);
+    tile.classList.remove('selected');
+  } else {
+    selected.add(key);
+    tile.classList.add('selected');
+  }
+  updateSummary();
+}
+
+function selectUnpaid() {
+  document.querySelectorAll('#monthGrid .month-tile:not(.disabled)').forEach(tile => {
+    const key = tile.dataset.key;
+    if (!selected.has(key)) {
+      selected.add(key);
+      tile.classList.add('selected');
+    }
+  });
+  updateSummary();
+}
+
+function clearSelection() {
+  selected.clear();
+  document.querySelectorAll('#monthGrid .month-tile.selected').forEach(t => t.classList.remove('selected'));
+  updateSummary();
+}
+
+function updateSummary() {
+  const count = selected.size;
+  const total = count * monthlyRent;
+  const bar   = document.getElementById('summaryBar');
+  const btn   = document.getElementById('payBtn');
+  const txt   = document.getElementById('payBtnText');
+
+  if (count === 0) {
+    bar.style.setProperty('display', 'none', 'important');
+    btn.disabled = true;
+    txt.textContent = 'Select months to pay';
+  } else {
+    bar.style.removeProperty('display');
+    document.getElementById('summaryCount').textContent = count + ' month' + (count > 1 ? 's' : '') + ' selected';
+    document.getElementById('summaryTotal').textContent = 'RWF ' + total.toLocaleString();
+    btn.disabled = false;
+    const methodLabel = payMethod === 'GLSPAY' ? 'via GLSPay'
+                      : payMethod === 'CASH'   ? '— Cash'
+                      : '— Bank Deposit';
+    txt.textContent = `Pay ${count} month${count > 1 ? 's' : ''} — RWF ${total.toLocaleString()} ${methodLabel}`;
+  }
+}
+
+// ── Recent payments table ───────────────────────────────────────────────────
+async function loadRecentPayments() {
+  const params = myUnitId ? { unitId: myUnitId, size: 20 } : { size: 20 };
+  const res  = await API.getPayments(params);
+  const body = document.getElementById('recentPayments');
+  if (!res?.ok || !res.data.data?.content?.length) {
+    body.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No payments yet</td></tr>';
+    return;
+  }
+  const statusColor = {
+    COMPLETED:'success', PENDING:'warning', PROCESSING:'info',
+    PENDING_CONFIRMATION:'primary', FAILED:'danger', CANCELLED:'secondary'
+  };
+  const statusLabel = {
+    COMPLETED:'Completed', PENDING:'Pending', PROCESSING:'Processing',
+    PENDING_CONFIRMATION:'Pending Confirmation', FAILED:'Failed', CANCELLED:'Cancelled'
+  };
+  body.innerHTML = res.data.data.content.map(p => {
+    // For GLSPay pending with checkout URL show complete button; otherwise just badge
+    const action = (p.status==='PENDING'||p.status==='PROCESSING') && p.glspayCheckoutUrl
+      ? `<a href="${p.glspayCheckoutUrl}" target="_blank" class="btn btn-xs btn-outline-primary py-0 px-2 ms-1">Complete Payment</a>`
+      : '';
+    return `<tr>
+      <td><code class="small">${p.referenceNumber}</code></td>
+      <td>${p.paymentPeriodMonth ? MONTH_SHORT[p.paymentPeriodMonth-1] + ' ' + p.paymentPeriodYear : '–'}</td>
+      <td>RWF ${(p.totalAmount||0).toLocaleString()}</td>
+      <td>
+        <span class="badge bg-label-${statusColor[p.status]||'secondary'}">${statusLabel[p.status]||p.status.replace(/_/g,' ')}</span>
+        ${action}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Submit ──────────────────────────────────────────────────────────────────
+document.getElementById('paymentForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!myUnitId) { showMsg('danger', 'No unit assigned to your account.'); return; }
+  if (selected.size === 0) { showMsg('danger', 'Please select at least one month.'); return; }
+
+  // Validate bank transfer has a receipt
+  if (payMethod === 'BANK_TRANSFER' && !receiptFile) {
+    showMsg('warning', 'Please upload your bank receipt / bordereau before submitting.');
+    return;
+  }
+
+  // Double-check none selected are already paid
+  for (const key of selected) {
+    if (paidPeriods.has(key)) {
+      showMsg('warning', `Period ${key} has already been paid or is in progress.`);
+      return;
+    }
+  }
+
+  const sp  = document.getElementById('paySpinner');
+  const btn = document.getElementById('payBtn');
+  sp.classList.remove('d-none'); btn.disabled = true;
+
+  try {
+  const periods = [...selected].map(key => {
+    const [y, m] = key.split('-');
+    return { year: parseInt(y), month: parseInt(m) };
+  });
+
+  // ── GLSPay ───────────────────────────────────────────────────────────────
+  if (payMethod === 'GLSPAY') {
+    const payload = {
+      unitId: myUnitId,
+      periods,
+      amountPerMonth: monthlyRent,
+      notes: document.getElementById('pNotes').value || null,
+      idempotencyKey: 'bulk-' + myUnitId + '-' + Date.now(),
+    };
+    const res = await API.initiateMultiPayment(payload);
+    if (res && res.ok && res.data.data) {
+      const payments = res.data.data;
+      markTilesPending(periods, 'Pending');
+      const checkoutUrl = payments.find(p => p.glspayCheckoutUrl)?.glspayCheckoutUrl;
+      const refs = payments.map(p => p.referenceNumber).join(', ');
+      if (checkoutUrl) {
+        showMsg('success', `${payments.length} month(s) initiated. Refs: ${refs}. Redirecting to GLSPay…`);
+        setTimeout(() => window.open(checkoutUrl, '_blank'), 1500);
+      } else {
+        showMsg('success', `${payments.length} month(s) initiated. Refs: ${refs}`);
+      }
+      await loadRecentPayments();
+    } else {
+      showMsg('danger', res?.data?.message || 'Payment failed. Please try again.');
+    }
+    return;
+  }
+
+  // ── Manual (Cash or Bank Transfer) ───────────────────────────────────────
+  const payload = {
+    unitId: myUnitId,
+    paymentMethod: payMethod,
+    periods,
+    amountPerMonth: monthlyRent,
+    notes: document.getElementById('pNotes').value || null,
+    idempotencyKey: 'manual-' + myUnitId + '-' + Date.now(),
+  };
+  const res = await API.initiateManualPayment(payload);
+
+  if (!res || !res.ok || !res.data.data) {
+    showMsg('danger', res?.data?.message || 'Failed to submit payment. Please try again.');
+    return;
+  }
+
+  const payments = res.data.data;
+
+  // For bank transfer: upload receipt to each payment record
+  if (payMethod === 'BANK_TRANSFER' && receiptFile) {
+    for (const p of payments) {
+      const uploadRes = await API.uploadReceipt(p.id, receiptFile);
+      if (!uploadRes || !uploadRes.ok) {
+        showMsg('warning', `Payment submitted but receipt upload failed for ${p.referenceNumber}. Please contact support.`);
+      }
+    }
+  }
+
+  markTilesPending(periods, payMethod === 'CASH' ? 'Awaiting Confirm' : 'Receipt Sent');
+
+  const refs = payments.map(p => p.referenceNumber).join(', ');
+  if (payMethod === 'CASH') {
+    showMsg('success', `Cash payment request submitted! Your landlord will confirm receipt. Refs: ${refs}`);
+  } else {
+    showMsg('success', `Bank receipt submitted for ${payments.length} month(s)! Your landlord will review and confirm. Refs: ${refs}`);
+  }
+
+  // Reset receipt
+  receiptFile = null;
+  document.getElementById('receiptFile').value = '';
+  const drop = document.getElementById('receiptDrop');
+  if (drop) { drop.classList.remove('has-file'); }
+  document.getElementById('receiptDropLabel').textContent = 'Click or drag & drop receipt (JPG, PNG, PDF)';
+
+  await loadRecentPayments();
+  } catch (err) {
+    console.error('Payment submission error:', err);
+    showMsg('danger', 'An unexpected error occurred. Please try again.');
+  } finally {
+    sp.classList.add('d-none'); btn.disabled = selected.size === 0;
+  }
+});
+
+function markTilesPending(periods, label) {
+  periods.forEach(p => {
+    const key = p.year + '-' + p.month;
+    paidPeriods.add(key);
+    const tile = document.querySelector(`#monthGrid .month-tile[data-key="${key}"]`);
+    if (tile) {
+      tile.classList.add('paid', 'disabled');
+      tile.classList.remove('selected', 'future');
+      tile.innerHTML = `
+        <div class="tile-month">${MONTH_NAMES[p.month-1]}</div>
+        <div class="tile-year">${p.year}</div>
+        <span class="tile-badge badge bg-label-warning" style="font-size:.6rem">${label}</span>`;
+    }
+  });
+  selected.clear();
+  updateSummary();
+}
+
+
+function showMsg(type, msg) {
+  const el = document.getElementById('paymentMsg');
+  el.className = `alert alert-${type}`;
+  el.textContent = msg;
+  el.classList.remove('d-none');
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>

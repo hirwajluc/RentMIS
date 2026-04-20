@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">My Profile — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+          <h4 class="mb-6">My Profile</h4>
+
+          <div class="row g-4">
+            <!-- Profile Card -->
+            <div class="col-md-4">
+              <div class="card text-center">
+                <div class="card-body py-5">
+                  <div class="avatar avatar-xl mx-auto mb-4">
+                    <span class="avatar-initial rounded-circle bg-label-primary fs-2" id="avatarInitial">–</span>
+                  </div>
+                  <h5 class="mb-1" id="profileName">–</h5>
+                  <p class="text-muted mb-3" id="profileEmail">–</p>
+                  <span class="badge bg-label-primary" id="profileRole">–</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Edit Form -->
+            <div class="col-md-8">
+              <div class="card">
+                <div class="card-header"><h5 class="mb-0">Edit Profile</h5></div>
+                <div class="card-body">
+                  <div id="profileMsg" class="d-none mb-3"></div>
+                  <form id="profileForm">
+                    <div class="row g-3">
+                      <div class="col-sm-6">
+                        <label class="form-label">First Name *</label>
+                        <input type="text" class="form-control" id="pFirstName" required/>
+                      </div>
+                      <div class="col-sm-6">
+                        <label class="form-label">Last Name *</label>
+                        <input type="text" class="form-control" id="pLastName" required/>
+                      </div>
+                      <div class="col-12">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="pEmail" disabled/>
+                      </div>
+                      <div class="col-sm-6">
+                        <label class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="pPhone"/>
+                      </div>
+                      <div class="col-sm-6">
+                        <label class="form-label">National ID</label>
+                        <input type="text" class="form-control" id="pNationalId"/>
+                      </div>
+                      <div class="col-sm-6">
+                        <label class="form-label">Preferred Language</label>
+                        <select class="form-select" id="pLanguage">
+                          <option value="ENGLISH">English</option>
+                          <option value="KINYARWANDA">Kinyarwanda</option>
+                          <option value="FRENCH">French</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="mt-4">
+                      <button type="submit" class="btn btn-primary">
+                        <span id="saveBtnText">Save Changes</span>
+                        <span id="saveSpinner" class="spinner-border spinner-border-sm d-none ms-1"></span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Change Password -->
+              <div class="card mt-4">
+                <div class="card-header"><h5 class="mb-0">Change Password</h5></div>
+                <div class="card-body">
+                  <div id="pwdMsg" class="d-none mb-3"></div>
+                  <form id="pwdForm">
+                    <div class="row g-3">
+                      <div class="col-12">
+                        <label class="form-label">Current Password *</label>
+                        <input type="password" class="form-control" id="currentPwd" required/>
+                      </div>
+                      <div class="col-sm-6">
+                        <label class="form-label">New Password *</label>
+                        <input type="password" class="form-control" id="newPwd" required/>
+                      </div>
+                      <div class="col-sm-6">
+                        <label class="form-label">Confirm New Password *</label>
+                        <input type="password" class="form-control" id="confirmPwd" required/>
+                      </div>
+                    </div>
+                    <div class="mt-4">
+                      <button type="submit" class="btn btn-outline-primary">
+                        <span id="pwdBtnText">Update Password</span>
+                        <span id="pwdSpinner" class="spinner-border spinner-border-sm d-none ms-1"></span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script>
+(async () => {
+  const user = Auth.getUser();
+  const res = await API.getProfile();
+  const u = (res && res.ok && res.data.data) ? res.data.data : user;
+
+  const initials = ((u.firstName||'?')[0] + (u.lastName||'?')[0]).toUpperCase();
+  document.getElementById('avatarInitial').textContent = initials;
+  document.getElementById('profileName').textContent = (u.firstName || '') + ' ' + (u.lastName || '');
+  document.getElementById('profileEmail').textContent = u.email || '';
+  document.getElementById('profileRole').textContent = u.role || '';
+
+  document.getElementById('pFirstName').value = u.firstName || '';
+  document.getElementById('pLastName').value = u.lastName || '';
+  document.getElementById('pEmail').value = u.email || '';
+  document.getElementById('pPhone').value = u.phone || '';
+  document.getElementById('pNationalId').value = u.nationalId || '';
+  if (u.language) document.getElementById('pLanguage').value = u.language;
+})();
+
+document.getElementById('profileForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const sp = document.getElementById('saveSpinner');
+  sp.classList.remove('d-none');
+
+  const res = await API.updateProfile({
+    firstName: document.getElementById('pFirstName').value,
+    lastName: document.getElementById('pLastName').value,
+    phone: document.getElementById('pPhone').value || null,
+    nationalId: document.getElementById('pNationalId').value || null,
+    language: document.getElementById('pLanguage').value || null
+  });
+
+  sp.classList.add('d-none');
+  const msgEl = document.getElementById('profileMsg');
+  if (res && res.ok) {
+    msgEl.className = 'alert alert-success';
+    msgEl.textContent = 'Profile updated successfully.';
+    // Update stored user (include language so i18n.js picks it up on reload)
+    const user = Auth.getUser();
+    const u = res.data.data || {};
+    const oldLang = (user.language || 'ENGLISH').toUpperCase();
+    Auth.save(Auth.getToken(), { ...user, firstName: u.firstName, lastName: u.lastName, fullName: u.firstName + ' ' + u.lastName, language: u.language });
+    // Clear session override so the new profile language takes effect immediately
+    sessionStorage.removeItem('viewLangSession');
+    if (u.language && u.language.toUpperCase() !== oldLang) {
+      // Reload after a moment so the success message is briefly visible
+      setTimeout(() => window.location.reload(), 800);
+    }
+  } else {
+    msgEl.className = 'alert alert-danger';
+    msgEl.textContent = (res && res.data && res.data.message) || 'Update failed.';
+  }
+  msgEl.classList.remove('d-none');
+});
+
+document.getElementById('pwdForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const newPwd = document.getElementById('newPwd').value;
+  const confirmPwd = document.getElementById('confirmPwd').value;
+  const msgEl = document.getElementById('pwdMsg');
+
+  if (newPwd !== confirmPwd) {
+    msgEl.className = 'alert alert-danger';
+    msgEl.textContent = 'New passwords do not match.';
+    msgEl.classList.remove('d-none');
+    return;
+  }
+
+  const sp = document.getElementById('pwdSpinner');
+  sp.classList.remove('d-none');
+
+  const res = await API.changePassword({
+    currentPassword: document.getElementById('currentPwd').value,
+    newPassword: newPwd
+  });
+
+  sp.classList.add('d-none');
+  if (res && res.ok) {
+    msgEl.className = 'alert alert-success';
+    msgEl.textContent = 'Password changed successfully.';
+    document.getElementById('pwdForm').reset();
+  } else {
+    msgEl.className = 'alert alert-danger';
+    msgEl.textContent = (res && res.data && res.data.message) || 'Failed to change password.';
+  }
+  msgEl.classList.remove('d-none');
+});
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>

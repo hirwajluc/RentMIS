@@ -1,0 +1,694 @@
+<!doctype html>
+<html lang="en" class="layout-navbar-fixed layout-menu-fixed layout-compact" dir="ltr"
+      data-skin="default" data-bs-theme="light" data-assets-path="/assets/" data-template="vertical-menu-template-no-customizer">
+<head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title id="page-title">Contracts — RentMIS</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/img/favicon/favicon.svg"/><link rel="alternate icon" type="image/x-icon" href="/assets/img/favicon/favicon.ico"/>
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/assets/vendor/fonts/iconify-icons.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/node-waves/node-waves.css"/>
+  <link rel="stylesheet" href="/assets/vendor/css/core.css"/>
+  <link rel="stylesheet" href="/assets/css/demo.css"/>
+  <link rel="stylesheet" href="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css"/>
+  <script src="/assets/vendor/js/helpers.js"></script>
+  <script src="/assets/js/config.js"></script>
+  <style>
+    .ts-wrapper .ts-control { border-radius: .375rem; }
+    .ts-wrapper.focus .ts-control { border-color: #246691; box-shadow: 0 0 0 .2rem rgba(115,103,240,.25); }
+    .ts-dropdown { z-index: 9999; }
+    select.form-select option:disabled { color:#aaa; font-style:italic; }
+  </style>
+</head>
+<body>
+<div class="layout-wrapper layout-content-navbar">
+  <div class="layout-container">
+    <div id="rentmis-sidebar"></div>
+    <div class="layout-page">
+      <div id="rentmis-navbar"></div>
+      <div class="content-wrapper">
+        <div class="container-xxl flex-grow-1 container-p-y">
+
+          <div class="d-flex align-items-center justify-content-between mb-6">
+            <div><h4 class="mb-1">Contracts</h4><p class="text-muted mb-0">Rental agreements &amp; blockchain records</p></div>
+            <button class="btn btn-primary" id="newContractBtn">
+              <i class="ti tabler-plus me-2"></i>New Contract
+            </button>
+          </div>
+
+          <div class="card">
+            <div class="card-header d-flex gap-3 flex-wrap">
+              <div class="input-group w-auto" style="max-width:260px">
+                <span class="input-group-text"><i class="ti tabler-search"></i></span>
+                <input type="text" id="searchInput" class="form-control" placeholder="Contract #…"/>
+              </div>
+              <select class="form-select w-auto" id="statusFilter">
+                <option value="">All Statuses</option>
+                <option>DRAFT</option><option>PENDING_SIGNATURE</option>
+                <option>ACTIVE</option><option>EXPIRED</option><option>TERMINATED</option>
+                <option>PENDING_RESIGN</option>
+              </select>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>Contract #</th><th>Tenant</th><th>Unit</th><th>Rent (RWF)</th>
+                    <th>Period</th><th>Status</th><th>Signatures</th><th>Blockchain</th><th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="contractsBody">
+                  <tr><td colspan="9" class="text-center py-4"><div class="spinner-border text-primary"></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+              <small class="text-muted" id="tableInfo"></small>
+              <nav><ul class="pagination pagination-sm mb-0" id="pagination"></ul></nav>
+            </div>
+          </div>
+        </div>
+        <footer class="content-footer footer bg-footer-theme">
+          <div class="container-xxl">
+            <div class="footer-container d-flex align-items-center justify-content-center py-3">
+              <p class="footer-text mb-0 text-muted small">Copyright &copy; <span class="footer-year"></span> <strong>Good Link Solutions</strong>. All rights reserved.</p>
+            </div>
+          </div>
+        </footer>
+        <div class="content-backdrop fade"></div>
+      </div>
+    </div>
+  </div>
+  <div class="layout-overlay layout-menu-toggle"></div>
+</div>
+
+<!-- Create Contract Modal -->
+<div class="modal fade" id="contractModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="ti tabler-file-plus me-2"></i>New Rental Contract</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form id="contractForm">
+        <div class="modal-body">
+          <div id="contractErr" class="alert alert-danger d-none"></div>
+
+          <!-- Tenant selector -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Tenant <span class="text-danger">*</span></label>
+            <div id="tenantLoadingMsg" class="text-muted small mb-1">
+              <span class="spinner-border spinner-border-sm me-1"></span>Loading available tenants…
+            </div>
+            <select id="cTenantId" required placeholder="Search by name or email…"></select>
+            <div class="form-text">Tenants flagged 🚩 with overdue payments or verified reports are shown but cannot be selected.</div>
+          </div>
+
+          <!-- Unit selector -->
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Unit <span class="text-danger">*</span></label>
+            <div id="unitLoadingMsg" class="text-muted small mb-1">
+              <span class="spinner-border spinner-border-sm me-1"></span>Loading available units…
+            </div>
+            <select id="cUnitId" required placeholder="Search by unit number or property…"></select>
+            <div class="form-text">Only available (unoccupied) units from your properties.</div>
+          </div>
+
+          <!-- Auto-populated fees -->
+          <div id="feePreview" class="alert alert-info d-none mb-4">
+            <div class="d-flex gap-4">
+              <div><small class="text-muted">Monthly Rent</small><div id="prevRent" class="fw-bold fs-5"></div></div>
+              <div><small class="text-muted">Deposit</small><div id="prevDeposit" class="fw-bold fs-5"></div></div>
+              <div><small class="text-muted">Unit Type</small><div id="prevType" class="fw-bold"></div></div>
+            </div>
+            <small class="text-muted">Pre-filled from unit — you may adjust below.</small>
+          </div>
+
+          <div class="row g-4">
+            <div class="col-md-6">
+              <label class="form-label">Start Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="cStart" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">End Date <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" id="cEnd" required/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Monthly Rent (RWF) <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">RWF</span>
+                <input type="number" class="form-control" id="cRent" required min="0" placeholder="0"/>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Security Deposit (RWF)</label>
+              <div class="input-group">
+                <span class="input-group-text">RWF</span>
+                <input type="number" class="form-control" id="cDeposit" min="0" value="0"/>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Terms &amp; Conditions</label>
+              <textarea class="form-control" id="cTerms" rows="3"
+                placeholder="Standard terms: Rent due on the 1st of every month. Late payment penalty: 5% after 7 days grace period…"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Special Clauses</label>
+              <textarea class="form-control" id="cClauses" rows="2"
+                placeholder="e.g. Pets not allowed, subletting prohibited…"></textarea>
+            </div>
+          </div>
+
+          <div class="alert alert-secondary mt-4 mb-0 d-flex align-items-center gap-2">
+            <i class="ti tabler-lock fs-4 text-primary"></i>
+            <span>A SHA-256 hash of this contract will be automatically recorded on the blockchain for immutability.</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">
+            <span id="cSaveTxt">Create Contract</span>
+            <span id="cSaveSpinner" class="spinner-border spinner-border-sm d-none ms-1"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Sign Confirmation Modal -->
+<div class="modal fade" id="signModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="ti tabler-signature me-2"></i>Confirm Signature</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3">
+          You are about to digitally sign this contract. This action is recorded on the blockchain
+          and cannot be undone. Enter your password to confirm.
+        </p>
+        <div id="signErr" class="alert alert-danger d-none small"></div>
+        <label class="form-label fw-semibold">Your Password <span class="text-danger">*</span></label>
+        <div class="input-group input-group-merge">
+          <input type="password" class="form-control" id="signPassword" placeholder="············" autocomplete="current-password"/>
+          <span class="input-group-text cursor-pointer" onclick="toggleSignPwd()">
+            <i id="signPwdIcon" class="ti tabler-eye-off"></i>
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" id="signConfirmBtn" onclick="confirmSign()">
+          <i class="ti tabler-check me-1"></i>
+          <span id="signBtnTxt">Sign Contract</span>
+          <span id="signBtnSpin" class="spinner-border spinner-border-sm d-none ms-1"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- View/Sign Contract Modal -->
+<div class="modal fade" id="viewModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="ti tabler-file-description me-2"></i>Contract Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="contractDetails"></div>
+      <div class="modal-footer" id="contractActions"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/vendor/libs/jquery/jquery.js"></script>
+<script src="/assets/vendor/libs/popper/popper.js"></script>
+<script src="/assets/vendor/js/bootstrap.js"></script>
+<script src="/assets/vendor/libs/node-waves/node-waves.js"></script>
+<script src="/assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+<script src="/assets/vendor/js/menu.js"></script>
+<script src="/assets/js/main.js"></script>
+  <script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/layout.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+<script>
+let page = 0;
+const qs          = new URLSearchParams(window.location.search);
+const fixedTenant = qs.get('tenantId');
+const cModal      = new bootstrap.Modal(document.getElementById('contractModal'));
+const vModal      = new bootstrap.Modal(document.getElementById('viewModal'));
+const user        = Auth.getUser();
+
+const statusColor = {
+  DRAFT:'secondary', PENDING_SIGNATURE:'warning',
+  ACTIVE:'success', EXPIRED:'danger', TERMINATED:'dark', RENEWED:'info',
+  PENDING_RESIGN:'danger'
+};
+
+const rwf = n => 'RWF ' + (n||0).toLocaleString();
+
+// Tom Select instances
+let tsTenant = null;
+let tsUnit   = null;
+
+function initTomSelects() {
+  if (typeof TomSelect === 'undefined') return; // CDN not loaded, plain selects will work
+  if (tsTenant) { try { tsTenant.destroy(); } catch(e){} }
+  if (tsUnit)   { try { tsUnit.destroy();   } catch(e){} }
+
+  tsTenant = new TomSelect('#cTenantId', {
+    placeholder: 'Search by name or email…',
+    allowEmptyOption: false,
+    searchField: ['text', 'email'],
+    render: {
+      option: (data) => {
+        if (data.flagged) {
+          const reasons = data.flagReasons || 'Issues on record';
+          return `<div class="d-flex align-items-start gap-2" style="opacity:.7">
+            <div class="flex-grow-1">
+              <span style="color:#dc3545;font-weight:600">🚩 ${data.text}</span>
+              <br><small class="text-muted">${data.email || ''}</small>
+              <br><small style="color:#dc3545">${Array.isArray(reasons) ? reasons.join(' · ') : reasons}</small>
+            </div>
+            <span class="badge bg-danger align-self-center" style="font-size:.65rem;white-space:nowrap">Cannot Select</span>
+          </div>`;
+        }
+        return `<div>${data.text}<br><small class="text-muted">${data.email || ''}</small></div>`;
+      },
+      item: (data) => `<div>${data.text}</div>`
+    },
+    onInitialize() { this.disable(); }
+  });
+
+  tsUnit = new TomSelect('#cUnitId', {
+    placeholder: 'Search by unit number or property…',
+    allowEmptyOption: false,
+    searchField: ['text', 'property'],
+    render: {
+      option: (data) =>
+        `<div><strong>${data.unitNum}</strong> — ${data.unitType}<br>` +
+        `<small class="text-muted">${data.property} · RWF ${data.rent}/mo</small></div>`,
+      item: (data) =>
+        `<div>${data.unitNum} — ${data.property}</div>`
+    },
+    onChange(val) {
+      const u = window._availableUnits && window._availableUnits[val];
+      if (!u) return;
+      document.getElementById('cRent').value    = u.rentAmount    || 0;
+      document.getElementById('cDeposit').value = u.depositAmount || 0;
+      document.getElementById('prevRent').textContent    = rwf(u.rentAmount);
+      document.getElementById('prevDeposit').textContent = rwf(u.depositAmount);
+      document.getElementById('prevType').textContent    = u.unitType || '—';
+      document.getElementById('feePreview').classList.remove('d-none');
+    },
+    onInitialize() { this.disable(); }
+  });
+}
+
+// ── Open create modal ───────────────────────────────────────────────────────
+document.getElementById('newContractBtn').addEventListener('click', () => {
+  document.getElementById('contractErr').classList.add('d-none');
+  document.getElementById('feePreview').classList.add('d-none');
+  document.getElementById('cRent').value    = '';
+  document.getElementById('cDeposit').value = 0;
+  document.getElementById('cTerms').value   = '';
+  document.getElementById('cClauses').value = '';
+
+  const today    = new Date().toISOString().split('T')[0];
+  const nextYear = new Date(Date.now() + 365*24*3600*1000).toISOString().split('T')[0];
+  document.getElementById('cStart').value = today;
+  document.getElementById('cEnd').value   = nextYear;
+
+  cModal.show();  // show modal first — always works
+});
+
+document.getElementById('contractModal').addEventListener('shown.bs.modal', async () => {
+  document.getElementById('tenantLoadingMsg').classList.remove('d-none');
+  document.getElementById('unitLoadingMsg').classList.remove('d-none');
+
+  initTomSelects();  // safe here — modal DOM is fully rendered
+
+  const [tr, ur] = await Promise.all([
+    API.getAvailableTenants(),
+    API.getAvailableUnits()
+  ]);
+
+  // ── Populate tenants ────────────────────────────────────────────────────
+  document.getElementById('tenantLoadingMsg').classList.add('d-none');
+  const tenants = (tr && tr.ok && tr.data.data) ? tr.data.data : [];
+  if (tsTenant) {
+    tsTenant.clearOptions();
+    if (tenants.length > 0) {
+      tsTenant.addOptions(tenants.map(t => ({
+        value:       String(t.id),
+        text:        `${t.firstName} ${t.lastName}`,
+        email:       t.email,
+        flagged:     t.flagged || false,
+        flagReasons: t.flagReasons || [],
+        disabled:    t.flagged || false
+      })));
+      tsTenant.enable();
+      if (fixedTenant) tsTenant.setValue(String(fixedTenant));
+    } else {
+      tsTenant.addOption({ value: '', text: 'No tenants available' });
+    }
+  } else {
+    // fallback: plain select
+    const sel = document.getElementById('cTenantId');
+    sel.innerHTML = '<option value="" disabled selected>— Select tenant —</option>';
+    tenants.forEach(t => {
+      const label = t.flagged
+        ? `🚩 ${t.firstName} ${t.lastName} — ${(t.flagReasons||[]).join(', ')}`
+        : `${t.firstName} ${t.lastName} (${t.email})`;
+      sel.innerHTML += `<option value="${t.id}" ${t.flagged ? 'disabled' : ''}>${label}</option>`;
+    });
+    sel.disabled = tenants.length === 0;
+  }
+
+  // ── Populate units ──────────────────────────────────────────────────────
+  document.getElementById('unitLoadingMsg').classList.add('d-none');
+  window._availableUnits = {};
+  const units = (ur && ur.ok && ur.data.data) ? ur.data.data : [];
+  units.forEach(u => { window._availableUnits[String(u.id)] = u; });
+
+  if (tsUnit) {
+    tsUnit.clearOptions();
+    if (units.length > 0) {
+      tsUnit.addOptions(units.map(u => ({
+        value: String(u.id), text: `${u.unitNumber} (${u.propertyName || '?'})`,
+        unitNum: u.unitNumber, property: u.propertyName || '—',
+        unitType: u.unitType || 'Unit', rent: (u.rentAmount || 0).toLocaleString()
+      })));
+      tsUnit.enable();
+    } else {
+      tsUnit.addOption({ value: '', text: 'No available units' });
+    }
+  } else {
+    // fallback: plain select
+    const sel = document.getElementById('cUnitId');
+    sel.innerHTML = '<option value="" disabled selected>— Select unit —</option>';
+    units.forEach(u => {
+      sel.innerHTML += `<option value="${u.id}">${u.unitNumber} — ${u.propertyName || ''} (RWF ${(u.rentAmount||0).toLocaleString()}/mo)</option>`;
+    });
+    sel.disabled = units.length === 0;
+    sel.addEventListener('change', function() {
+      const u = window._availableUnits && window._availableUnits[this.value];
+      if (!u) return;
+      document.getElementById('cRent').value    = u.rentAmount    || 0;
+      document.getElementById('cDeposit').value = u.depositAmount || 0;
+      document.getElementById('prevRent').textContent    = rwf(u.rentAmount);
+      document.getElementById('prevDeposit').textContent = rwf(u.depositAmount);
+      document.getElementById('prevType').textContent    = u.unitType || '—';
+      document.getElementById('feePreview').classList.remove('d-none');
+    });
+  }
+});
+
+// ── Load contracts ──────────────────────────────────────────────────────────
+async function loadContracts() {
+  const params = { page, size: 20 };
+  const sf = document.getElementById('statusFilter').value;
+  if (sf) params.status = sf;
+  if (fixedTenant) params.tenantId = fixedTenant;
+  if (user.role === 'TENANT') params.tenantId = user.id;
+
+  const res = await API.getContracts(params);
+  if (!res || !res.ok) return;
+  const body = document.getElementById('contractsBody');
+  const p    = res.data.data;
+
+  if (!p || !p.content || p.content.length === 0) {
+    body.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No contracts found</td></tr>';
+    document.getElementById('tableInfo').textContent = '0 contracts';
+    document.getElementById('pagination').innerHTML = '';
+    return;
+  }
+
+  body.innerHTML = p.content.map(c => {
+    const landlordSigned = c.landlordSignedAt
+      ? `<span class="text-success"><i class="ti tabler-check"></i> Landlord</span>`
+      : `<span class="text-muted">Landlord</span>`;
+    const tenantSigned = c.tenantSignedAt
+      ? `<span class="text-success"><i class="ti tabler-check"></i> Tenant</span>`
+      : `<span class="text-muted">Tenant</span>`;
+    const blockchainBadge = c.blockchainTxHash
+      ? `<span class="badge bg-label-success" title="${c.blockchainTxHash}"><i class="ti tabler-link"></i> On-chain</span>`
+      : '<span class="badge bg-label-secondary">Pending</span>';
+
+    const isPendingResign  = c.status === 'PENDING_RESIGN';
+    const canSignLandlord  = (c.status === 'PENDING_SIGNATURE' || isPendingResign) && !c.landlordSignedAt && user.role !== 'TENANT';
+    const canSignTenant    = (c.status === 'PENDING_SIGNATURE' || isPendingResign) && !c.tenantSignedAt   && user.role === 'TENANT';
+    const canTerminate     = c.status === 'ACTIVE' && user.role !== 'TENANT';
+    const signLabel        = isPendingResign ? 'Re-Sign' : 'Sign';
+
+    const tamperRow = isPendingResign ? `
+      <tr class="table-danger border-0">
+        <td colspan="9" class="py-2 px-3">
+          <div class="d-flex align-items-center gap-2">
+            <i class="ti tabler-alert-triangle text-danger fs-5"></i>
+            <strong class="text-danger">Tampering Detected</strong>
+            <span class="text-danger small">— Contract data was modified after signing.
+              All signatures have been invalidated${c.tamperDetectedAt ? ' on ' + new Date(c.tamperDetectedAt).toLocaleString() : ''}.
+              Both parties must review and re-sign.</span>
+          </div>
+        </td>
+      </tr>` : '';
+
+    return tamperRow + `<tr class="${isPendingResign ? 'table-warning' : ''}">
+      <td><code>${c.contractNumber}</code></td>
+      <td>${c.tenant ? c.tenant.firstName + ' ' + c.tenant.lastName : '—'}</td>
+      <td>${c.unit ? c.unit.unitNumber : '—'}${c.unit && c.unit.propertyName ? `<br><small class="text-muted">${c.unit.propertyName}</small>` : ''}</td>
+      <td>${(c.monthlyRent||0).toLocaleString()}</td>
+      <td><small>${c.startDate} → ${c.endDate}</small></td>
+      <td><span class="badge bg-label-${statusColor[c.status]||'secondary'}">${isPendingResign ? 'PENDING RE-SIGN' : c.status}</span></td>
+      <td class="d-flex flex-column gap-1">${landlordSigned}${tenantSigned}</td>
+      <td>${blockchainBadge}</td>
+      <td>
+        <div class="d-flex gap-1 flex-wrap">
+          <button class="btn btn-sm btn-icon btn-outline-primary" onclick="viewContract(${c.id})" title="View">
+            <i class="ti tabler-eye"></i>
+          </button>
+          <button class="btn btn-sm btn-icon btn-outline-secondary"
+             onclick="API.openContractPdf(${c.id})" title="View PDF (Draft)">
+            <i class="ti tabler-file-type-pdf"></i>
+          </button>
+          ${canSignLandlord ? `<button class="btn btn-sm btn-icon ${isPendingResign ? 'btn-warning' : 'btn-outline-success'}" onclick="signContract(${c.id},'landlord','${signLabel}')" title="${signLabel} as Landlord"><i class="ti tabler-signature"></i></button>` : ''}
+          ${canSignTenant   ? `<button class="btn btn-sm btn-icon ${isPendingResign ? 'btn-warning' : 'btn-outline-success'}" onclick="signContract(${c.id},'tenant','${signLabel}')"   title="${signLabel} as Tenant"><i class="ti tabler-signature"></i></button>`   : ''}
+          ${canTerminate    ? `<button class="btn btn-sm btn-icon btn-outline-danger"  onclick="terminateContract(${c.id})"        title="Terminate"><i class="ti tabler-x"></i></button>`               : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tableInfo').textContent = `${p.totalElements} contracts`;
+  const pg = document.getElementById('pagination');
+  pg.innerHTML = Array.from({length: p.totalPages}, (_, i) =>
+    `<li class="page-item${i===p.number?' active':''}"><a class="page-link" onclick="gotoPage(${i})">${i+1}</a></li>`
+  ).join('');
+}
+
+// ── View contract ───────────────────────────────────────────────────────────
+async function viewContract(id) {
+  const res = await API.getContract(id);
+  if (!res || !res.ok) return;
+  const c = res.data.data;
+
+  document.getElementById('contractDetails').innerHTML = `
+    <div class="row g-3">
+      <div class="col-6"><small class="text-muted">Contract #</small><div><code>${c.contractNumber}</code></div></div>
+      <div class="col-6"><small class="text-muted">Status</small><div><span class="badge bg-label-${statusColor[c.status]||'secondary'}">${c.status}</span></div></div>
+      <div class="col-6"><small class="text-muted">Tenant</small><div>${c.tenant ? c.tenant.firstName + ' ' + c.tenant.lastName : '—'}<br><small class="text-muted">${c.tenant ? c.tenant.email : ''}</small></div></div>
+      <div class="col-6"><small class="text-muted">Landlord</small><div>${c.landlord ? c.landlord.firstName + ' ' + c.landlord.lastName : '—'}<br><small class="text-muted">${c.landlord ? c.landlord.email : ''}</small></div></div>
+      <div class="col-6"><small class="text-muted">Unit</small><div>${c.unit ? c.unit.unitNumber : '—'}${c.unit && c.unit.propertyName ? ' — ' + c.unit.propertyName : ''}</div></div>
+      <div class="col-6"><small class="text-muted">Monthly Rent</small><div><strong>RWF ${(c.monthlyRent||0).toLocaleString()}</strong></div></div>
+      <div class="col-6"><small class="text-muted">Deposit</small><div>RWF ${(c.depositAmount||0).toLocaleString()}</div></div>
+      <div class="col-6"><small class="text-muted">Period</small><div>${c.startDate} → ${c.endDate}</div></div>
+      <div class="col-6"><small class="text-muted">Landlord Signed</small><div>${c.landlordSignedAt ? '<span class="text-success"><i class="ti tabler-check"></i> ' + new Date(c.landlordSignedAt).toLocaleString() + '</span>' : '<span class="text-muted">Not yet</span>'}</div></div>
+      <div class="col-6"><small class="text-muted">Tenant Signed</small><div>${c.tenantSignedAt ? '<span class="text-success"><i class="ti tabler-check"></i> ' + new Date(c.tenantSignedAt).toLocaleString() + '</span>' : '<span class="text-muted">Not yet</span>'}</div></div>
+      ${c.contractHash ? `<div class="col-12"><small class="text-muted">Contract Hash (SHA-256)</small><div><code class="small text-break">${c.contractHash}</code></div></div>` : ''}
+      ${c.landlordSignature ? `<div class="col-12"><small class="text-muted">Landlord HMAC Signature</small><div><code class="small text-break text-info">${c.landlordSignature}</code></div></div>` : ''}
+      ${c.tenantSignature   ? `<div class="col-12"><small class="text-muted">Tenant HMAC Signature</small><div><code class="small text-break text-info">${c.tenantSignature}</code></div></div>` : ''}
+      ${c.blockchainTxHash  ? `<div class="col-12"><small class="text-muted">Blockchain TX</small><div><code class="small text-break text-success">${c.blockchainTxHash}</code><br><small class="text-muted">${c.blockchainNetwork || ''}</small></div></div>` : ''}
+      ${c.termsConditions   ? `<div class="col-12"><small class="text-muted">Terms</small><div class="small mt-1 border rounded p-2">${c.termsConditions}</div></div>` : ''}
+      ${c.specialClauses    ? `<div class="col-12"><small class="text-muted">Special Clauses</small><div class="small mt-1 border rounded p-2">${c.specialClauses}</div></div>` : ''}
+    </div>`;
+
+  const isPR = c.status === 'PENDING_RESIGN';
+  const tamperAlert = isPR ? `
+    <div class="alert alert-danger d-flex gap-2 align-items-start mb-3">
+      <i class="ti tabler-alert-triangle fs-4 mt-1 flex-shrink-0"></i>
+      <div>
+        <strong>Tampering Detected</strong><br>
+        <small>Contract data was modified after signing${c.tamperDetectedAt ? ' on ' + new Date(c.tamperDetectedAt).toLocaleString() : ''}.
+        All signatures have been invalidated. Both parties must review the current terms and re-sign before this contract is valid again.</small>
+      </div>
+    </div>` : '';
+  document.getElementById('contractDetails').innerHTML = tamperAlert + document.getElementById('contractDetails').innerHTML;
+
+  document.getElementById('contractActions').innerHTML = `
+    <button onclick="API.openContractPdf(${c.id})" class="btn btn-outline-primary me-auto">
+      <i class="ti tabler-file-type-pdf me-1"></i>${isPR ? 'View Draft PDF' : 'View / Download PDF'}
+    </button>
+    ${(c.status === 'PENDING_SIGNATURE' || isPR) && !c.landlordSignedAt && user.role !== 'TENANT'
+      ? `<button class="btn ${isPR ? 'btn-warning' : 'btn-success'}" onclick="signContract(${c.id},'landlord','${isPR ? 'Re-Sign' : 'Sign'}')">
+           <i class="ti tabler-signature me-1"></i>${isPR ? 'Re-Sign as Landlord' : 'Sign as Landlord'}
+         </button>` : ''}
+    ${(c.status === 'PENDING_SIGNATURE' || isPR) && !c.tenantSignedAt && user.role === 'TENANT'
+      ? `<button class="btn ${isPR ? 'btn-warning' : 'btn-success'}" onclick="signContract(${c.id},'tenant','${isPR ? 'Re-Sign' : 'Sign'}')">
+           <i class="ti tabler-signature me-1"></i>${isPR ? 'Re-Sign as Tenant' : 'Sign as Tenant'}
+         </button>` : ''}
+    ${c.status === 'ACTIVE' && user.role !== 'TENANT'
+      ? `<button class="btn btn-outline-danger" onclick="terminateContract(${c.id})"><i class="ti tabler-x me-1"></i>Terminate</button>` : ''}
+    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>`;
+
+  vModal.show();
+}
+
+// ── Sign (password confirmation) ─────────────────────────────────────────────
+let _signPending = null;   // { contractId, type }
+const sModal = new bootstrap.Modal(document.getElementById('signModal'));
+
+function signContract(contractId, type, label) {
+  const isResign = label === 'Re-Sign';
+  _signPending = { contractId, type };
+  document.getElementById('signPassword').value = '';
+  document.getElementById('signErr').classList.add('d-none');
+  document.getElementById('signBtnTxt').textContent = isResign ? 'Re-Sign Contract' : 'Sign Contract';
+  document.getElementById('signBtnSpin').classList.add('d-none');
+  // Update modal title and body text for re-sign
+  document.querySelector('#signModal .modal-title').innerHTML =
+    isResign
+      ? '<i class="ti tabler-refresh-alert me-2 text-warning"></i>Re-Sign Contract'
+      : '<i class="ti tabler-signature me-2"></i>Confirm Signature';
+  document.querySelector('#signModal .modal-body p').innerHTML =
+    isResign
+      ? '<span class="text-danger fw-semibold">Contract data was modified after the original signing.</span> ' +
+        'Please review the current contract terms carefully. By re-signing you acknowledge and accept the updated terms. ' +
+        'Enter your password to confirm.'
+      : 'You are about to digitally sign this contract. This action is recorded on the blockchain ' +
+        'and cannot be undone. Enter your password to confirm.';
+  sModal.show();
+  document.getElementById('signModal').addEventListener('shown.bs.modal',
+    () => document.getElementById('signPassword').focus(), { once: true });
+}
+
+function toggleSignPwd() {
+  const inp  = document.getElementById('signPassword');
+  const icon = document.getElementById('signPwdIcon');
+  const show = inp.type === 'password';
+  inp.type   = show ? 'text' : 'password';
+  icon.className = show ? 'ti tabler-eye' : 'ti tabler-eye-off';
+}
+
+async function confirmSign() {
+  const password = document.getElementById('signPassword').value.trim();
+  if (!password) {
+    const err = document.getElementById('signErr');
+    err.textContent = 'Please enter your password.';
+    err.classList.remove('d-none');
+    return;
+  }
+  if (!_signPending) return;
+
+  const spin = document.getElementById('signBtnSpin');
+  const btn  = document.getElementById('signConfirmBtn');
+  spin.classList.remove('d-none');
+  btn.disabled = true;
+  document.getElementById('signErr').classList.add('d-none');
+
+  const { contractId, type } = _signPending;
+  const res = type === 'landlord'
+    ? await API.signLandlord(contractId, password)
+    : await API.signTenant(contractId, password);
+
+  spin.classList.add('d-none');
+  btn.disabled = false;
+
+  if (res && res.ok) {
+    sModal.hide();
+    vModal.hide();
+    loadContracts();
+  } else {
+    const err = document.getElementById('signErr');
+    err.textContent = (res && res.data && res.data.message) || 'Signing failed. Check your password.';
+    err.classList.remove('d-none');
+    document.getElementById('signPassword').value = '';
+    document.getElementById('signPassword').focus();
+  }
+}
+
+// Allow Enter key to confirm sign
+document.getElementById('signPassword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmSign();
+});
+
+// ── Terminate ───────────────────────────────────────────────────────────────
+async function terminateContract(id) {
+  const reason = prompt('Reason for termination:');
+  if (reason === null) return;
+  const res = await API.terminateContract(id, reason);
+  if (res && res.ok) { loadContracts(); vModal.hide(); }
+  else alert('Failed to terminate contract.');
+}
+
+function gotoPage(n) { page = n; loadContracts(); }
+
+// ── Submit create form ──────────────────────────────────────────────────────
+document.getElementById('contractForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const sp = document.getElementById('cSaveSpinner');
+  sp.classList.remove('d-none');
+  document.getElementById('cSaveTxt').textContent = 'Creating…';
+
+  const tenantVal = tsTenant ? tsTenant.getValue() : document.getElementById('cTenantId').value;
+  const unitVal   = tsUnit   ? tsUnit.getValue()   : document.getElementById('cUnitId').value;
+  if (!tenantVal || !unitVal) {
+    const err = document.getElementById('contractErr');
+    err.textContent = 'Please select both a tenant and a unit.';
+    err.classList.remove('d-none');
+    sp.classList.add('d-none');
+    document.getElementById('cSaveTxt').textContent = 'Create Contract';
+    return;
+  }
+  const body = {
+    tenantId:        parseInt(tenantVal),
+    unitId:          parseInt(unitVal),
+    startDate:       document.getElementById('cStart').value,
+    endDate:         document.getElementById('cEnd').value,
+    monthlyRent:     parseFloat(document.getElementById('cRent').value),
+    depositAmount:   parseFloat(document.getElementById('cDeposit').value) || 0,
+    termsConditions: document.getElementById('cTerms').value,
+    specialClauses:  document.getElementById('cClauses').value,
+  };
+
+  const res = await API.createContract(body);
+  sp.classList.add('d-none');
+  document.getElementById('cSaveTxt').textContent = 'Create Contract';
+
+  if (res && res.ok) {
+    cModal.hide();
+    loadContracts();
+  } else {
+    const err = document.getElementById('contractErr');
+    err.textContent = (res && res.data && res.data.message) || 'Failed to create contract.';
+    err.classList.remove('d-none');
+  }
+});
+
+document.getElementById('statusFilter').addEventListener('change', () => { page = 0; loadContracts(); });
+
+// Hide New Contract button for tenants
+if (user.role === 'TENANT') {
+  document.getElementById('newContractBtn').classList.add('d-none');
+}
+
+loadContracts();
+</script>
+<script>document.querySelectorAll('.footer-year').forEach(function(el){el.textContent=new Date().getFullYear();});</script>
+</body>
+</html>
