@@ -42,6 +42,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findByTenantIdAndPaymentPeriodMonthAndPaymentPeriodYear(
             Long tenantId, Integer month, Integer year);
 
+    List<Payment> findByUnitIdAndPaymentPeriodMonthAndPaymentPeriodYear(
+            Long unitId, Integer month, Integer year);
+
     @Query("SELECT p FROM Payment p " +
            "LEFT JOIN p.unit u LEFT JOIN u.property prop WHERE " +
            "(:tenantId   IS NULL OR p.tenant.id          = :tenantId)   AND " +

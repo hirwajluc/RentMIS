@@ -177,11 +177,12 @@
             <!-- Inline: Multi-unit info (shown when APARTMENT or COMPLEX selected) -->
             <div id="step1MuInfo" class="d-none mt-3">
               <hr class="my-3"/>
-              <div class="row g-3 mb-3">
+              <!-- Area field: only for COMPLEX -->
+              <div id="step1AreaRow" class="row g-3 mb-3 d-none">
                 <div class="col-md-6">
-                  <label class="form-label fw-semibold">Total Area (m²) <span class="text-danger">*</span></label>
+                  <label class="form-label fw-semibold">Total Area per Floor (m²) <span class="text-danger">*</span></label>
                   <input type="number" class="form-control" id="pTotalArea" min="1" step="0.01" placeholder="e.g. 2000"/>
-                  <div class="form-text">Shared across all floors/units. Units cannot exceed this total.</div>
+                  <div class="form-text">Area budget per floor — units on each floor cannot exceed this limit.</div>
                 </div>
               </div>
               <div class="alert alert-info py-2 px-3 small mb-0">
@@ -423,11 +424,14 @@ function selectCategory(el) {
 }
 
 function updateStep1Details() {
-  const isFh = selectedCategory === 'FULL_HOUSE';
-  const isMu = selectedCategory === 'APARTMENT_BUILDING' || selectedCategory === 'COMPLEX';
+  const isFh      = selectedCategory === 'FULL_HOUSE';
+  const isMu      = selectedCategory === 'APARTMENT_BUILDING' || selectedCategory === 'COMPLEX';
+  const isComplex = selectedCategory === 'COMPLEX';
   document.getElementById('step1FhFields').classList.toggle('d-none', !isFh);
   document.getElementById('step1MuInfo').classList.toggle('d-none', !isMu);
-  if (selectedCategory === 'COMPLEX') {
+  document.getElementById('step1AreaRow').classList.toggle('d-none', !isComplex);
+  if (!isComplex) document.getElementById('pTotalArea').value = '';
+  if (isComplex) {
     document.getElementById('step1MuHint').textContent =
       'This Complex can have Residential, Shop, Office, and Restaurant units — all managed in the Units section.';
   } else if (selectedCategory === 'APARTMENT_BUILDING') {

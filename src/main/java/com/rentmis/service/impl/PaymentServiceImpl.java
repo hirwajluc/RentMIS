@@ -89,10 +89,10 @@ public class PaymentServiceImpl {
             throw RentMISException.forbidden("You are not assigned to this unit");
         }
 
-        // Check for duplicate payment this period
+        // Check for duplicate payment this period — scoped to unit, not just tenant
         List<Payment> existing = paymentRepository
-                .findByTenantIdAndPaymentPeriodMonthAndPaymentPeriodYear(
-                        tenantId, request.getPaymentPeriodMonth(), request.getPaymentPeriodYear());
+                .findByUnitIdAndPaymentPeriodMonthAndPaymentPeriodYear(
+                        unit.getId(), request.getPaymentPeriodMonth(), request.getPaymentPeriodYear());
         existing.stream()
                 .filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
                 .findFirst()
@@ -166,10 +166,10 @@ public class PaymentServiceImpl {
             throw RentMISException.forbidden("You are not assigned to this unit");
         }
 
-        // Validate every requested period
+        // Validate every requested period — scoped to unit so multi-contract tenants aren't blocked
         for (BulkPaymentRequest.PeriodEntry pe : request.getPeriods()) {
             List<Payment> existing = paymentRepository
-                    .findByTenantIdAndPaymentPeriodMonthAndPaymentPeriodYear(tenantId, pe.getMonth(), pe.getYear());
+                    .findByUnitIdAndPaymentPeriodMonthAndPaymentPeriodYear(unit.getId(), pe.getMonth(), pe.getYear());
             existing.stream().filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
                     .findFirst().ifPresent(p -> { throw RentMISException.conflict(
                             "Rent already paid for " + pe.getMonth() + "/" + pe.getYear()); });
@@ -256,8 +256,8 @@ public class PaymentServiceImpl {
         }
 
         for (ManualPaymentRequest.PeriodEntry pe : request.getPeriods()) {
-            List<Payment> existing = paymentRepository.findByTenantIdAndPaymentPeriodMonthAndPaymentPeriodYear(
-                    tenantId, pe.getMonth(), pe.getYear());
+            List<Payment> existing = paymentRepository.findByUnitIdAndPaymentPeriodMonthAndPaymentPeriodYear(
+                    unit.getId(), pe.getMonth(), pe.getYear());
             existing.stream().filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
                     .findFirst().ifPresent(p -> { throw RentMISException.conflict(
                             "Rent already paid for " + pe.getMonth() + "/" + pe.getYear()); });
@@ -413,8 +413,8 @@ public class PaymentServiceImpl {
         }
 
         User tenant = unit.getCurrentTenant();
-        List<Payment> existing = paymentRepository.findByTenantIdAndPaymentPeriodMonthAndPaymentPeriodYear(
-                tenant.getId(), month, year);
+        List<Payment> existing = paymentRepository.findByUnitIdAndPaymentPeriodMonthAndPaymentPeriodYear(
+                unit.getId(), month, year);
         existing.stream().filter(p -> p.getStatus() == PaymentStatus.COMPLETED)
                 .findFirst().ifPresent(p -> { throw RentMISException.conflict("Rent already paid for this period"); });
 
