@@ -8,3 +8,5 @@ target/
 .mvn/wrapper/
 logs/
 *.log
+*.docx
+generate_concept_note.py
